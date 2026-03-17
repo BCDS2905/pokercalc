@@ -1,12 +1,23 @@
 """
 PokerCalc — arquivo único
-pip install flask
-python app.py          →  http://localhost:8080
-python app.py --test   →  roda os testes
+pip install flask pybind11
+bash build.sh              →  compila evaluator.cpp
+python app.py              →  http://localhost:8080
+python app.py --test       →  roda os testes
 """
 import sys, random, itertools, threading, uuid, time, os, secrets
 from collections import Counter, defaultdict
 from flask import Flask, request, jsonify, Response, redirect
+
+# ─── Tenta carregar avaliador C++ (20x mais rápido) ──────
+try:
+    import evaluator as _cpp
+    _USE_CPP = True
+    print("  ♠  Modo turbo: C++ carregado com sucesso!")
+except ImportError:
+    _USE_CPP = False
+    print("  ⚠  evaluator.so não encontrado — usando Python puro")
+    print("     Execute: bash build.sh  para compilar o C++")
 
 app = Flask(__name__)
 
@@ -19,6 +30,14 @@ import gzip, io
 
 @app.after_request
 def set_security_headers(response):
+    # ── CORS — permite requisições do Vercel e pokercalc.com.br ──
+    origin = request.headers.get('Origin', '')
+    allowed_origins = ['pokercalc.com.br', 'www.pokercalc.com.br', 'vercel.app', 'localhost', '127.0.0.1']
+    if any(a in origin for a in allowed_origins):
+        response.headers['Access-Control-Allow-Origin']  = origin
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+
     # ── Segurança ──
     response.headers['X-Frame-Options'] = 'DENY'
     response.headers['X-Content-Type-Options'] = 'nosniff'
@@ -72,12 +91,12 @@ def set_security_headers(response):
 # CORS: só permite requisições da própria origem
 @app.before_request
 def check_origin():
-    # Só verifica requisições de mutação (POST)
     if request.method == 'POST':
         origin = request.headers.get('Origin', '')
         host   = request.headers.get('Host', '')
-        # Permite localhost para desenvolvimento
-        allowed = ['localhost', '127.0.0.1', host]
+        allowed = ['localhost', '127.0.0.1', host,
+                   'pokercalc.com.br', 'www.pokercalc.com.br',
+                   'vercel.app', 'onrender.com']
         if origin and not any(a in origin for a in allowed):
             return jsonify({'error': 'Origem não permitida.'}), 403
 # Limita cada IP a 30 requisições por minuto nas rotas de cálculo
@@ -224,8 +243,13 @@ def label_board(hole, board):
     return ['Carta Alta','Um Par','Dois Pares','Trinca','Sequência',
             'Flush','Full House','Quadra','Straight Flush'][hand_rank(hole+board)[0]]
 
-# ─── MONTE CARLO OTIMIZADO ────────────────────
+# ─── MONTE CARLO (C++ ou Python) ──────────────
 def monte_carlo(hole, board, opponents=1, n=10000, cb=None):
+    if _USE_CPP:
+        res = _cpp.monte_carlo(hole, board, opponents, n)
+        if cb: cb(90)
+        return {'win': res[0], 'tie': res[1], 'lose': res[2]}
+    # Fallback Python
     base   = [CARD_INT[c] for c in FULL_DECK if c not in hole+board]
     hole_i = [CARD_INT[c] for c in hole]
     board_i= [CARD_INT[c] for c in board]
@@ -280,6 +304,11 @@ def get_draws(hole, board):
 def monte_carlo_multi(hands, board=[], n=10000, cb=None):
     used=[c for h in hands for c in h]+list(board)
     if len(used)!=len(set(used)): raise ValueError("Cartas duplicadas.")
+    if _USE_CPP:
+        res = _cpp.monte_carlo_multi(hands, list(board), n)
+        if cb: cb(100)
+        return [{'win':r[0],'tie':r[1],'lose':r[2]} for r in res]
+    # Fallback Python
     base_i =[CARD_INT[c] for c in FULL_DECK if c not in used]
     hands_i=[[CARD_INT[c] for c in h] for h in hands]
     board_i=[CARD_INT[c] for c in board]
@@ -1981,6 +2010,13 @@ def healthcheck():
         'cache_entries': len(_CACHE),
         'ts': int(time.time())
     })
+
+@app.route('/calculate', methods=['OPTIONS'])
+@app.route('/compare',   methods=['OPTIONS'])
+@app.route('/status/<jid>', methods=['OPTIONS'])
+def handle_options(jid=None):
+    """Responde preflight CORS do browser."""
+    return '', 204
 
 @app.route('/')
 def index():
