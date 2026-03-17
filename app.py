@@ -15,14 +15,13 @@ app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(32))
 
 # Headers de segurança em todas as respostas
+import gzip, io
+
 @app.after_request
 def set_security_headers(response):
-    # Impede que o site seja embutido em iframe (clickjacking)
+    # ── Segurança ──
     response.headers['X-Frame-Options'] = 'DENY'
-    # Impede que o browser adivinhe o content-type (MIME sniffing)
     response.headers['X-Content-Type-Options'] = 'nosniff'
-    # Política de segurança de conteúdo — só permite recursos do próprio site
-    # e CDNs necessários (Tailwind, Google Fonts)
     response.headers['Content-Security-Policy'] = (
         "default-src 'self'; "
         "script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; "
@@ -32,12 +31,42 @@ def set_security_headers(response):
         "connect-src 'self'; "
         "frame-ancestors 'none';"
     )
-    # Força HTTPS no browser por 1 ano (só ativo em produção)
     if os.environ.get('FLASK_ENV') == 'production':
         response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
-    # Remove header que revela que é Flask
     response.headers.pop('Server', None)
     response.headers['X-Powered-By'] = 'PokerCalc'
+
+    # ── Cache-Control por tipo de conteúdo ──
+    path = request.path
+    if path in ('/favicon.svg', '/favicon.ico'):
+        # favicon: cache por 7 dias
+        response.headers['Cache-Control'] = 'public, max-age=604800, immutable'
+    elif path == '/healthcheck':
+        # healthcheck: sem cache
+        response.headers['Cache-Control'] = 'no-store'
+    elif request.method == 'GET' and path == '/':
+        # HTML principal: revalidar sempre (conteúdo pode mudar com deploy)
+        response.headers['Cache-Control'] = 'public, max-age=300, must-revalidate'
+    elif request.method in ('POST',):
+        # APIs de cálculo: sem cache
+        response.headers['Cache-Control'] = 'no-store'
+
+    # ── Compressão Gzip ──
+    # Comprime respostas HTML/JSON grandes se o cliente aceitar
+    if (response.status_code == 200
+            and 'gzip' in request.headers.get('Accept-Encoding', '')
+            and not response.direct_passthrough
+            and len(response.get_data()) > 1000):
+        content_type = response.content_type.lower()
+        if any(t in content_type for t in ('text/', 'application/json', 'image/svg')):
+            buf = io.BytesIO()
+            with gzip.GzipFile(mode='wb', fileobj=buf, compresslevel=6) as gz:
+                gz.write(response.get_data())
+            response.set_data(buf.getvalue())
+            response.headers['Content-Encoding'] = 'gzip'
+            response.headers['Content-Length']   = len(response.get_data())
+            response.headers['Vary']              = 'Accept-Encoding'
+
     return response
 
 # CORS: só permite requisições da própria origem
@@ -84,7 +113,7 @@ def cache_set(k,v):
     _CACHE[k] = v
 
 # ─── JOBS ─────────────────────────────────────
-_JOBS = {}; _TTL = 120; _JOBS_TTL = _TTL  # alias para compatibilidade
+_JOBS = {}; _TTL = 300; _JOBS_TTL = _TTL  # jobs ficam 5 minutos em memória
 
 def _prune():
     now = time.time()
@@ -102,7 +131,63 @@ def job_fail(jid, e):
 def job_prog(jid, p):
     if jid in _JOBS: _JOBS[jid]['progress'] = p
 
-# ─── AVALIADOR ────────────────────────────────
+# ─── AVALIADOR OTIMIZADO (bitmask, ~2x mais rápido) ──
+SUIT_IDX  = {'s':0,'h':1,'d':2,'c':3}
+CARD_INT  = {c: RANK_VAL[c[:-1]]*4+SUIT_IDX[c[-1]] for c in FULL_DECK}
+INT_RANK  = [i//4 for i in range(52)]
+INT_SUIT  = [i%4  for i in range(52)]
+COMBOS7   = list(itertools.combinations(range(7),5))
+_STRAIGHTS = set()
+for _s in range(9): _STRAIGHTS.add(0b11111<<_s)
+_STRAIGHTS.add(0b1000000001111)  # Wheel A-2-3-4-5
+
+def eval5_int(c0,c1,c2,c3,c4):
+    r0=INT_RANK[c0];r1=INT_RANK[c1];r2=INT_RANK[c2];r3=INT_RANK[c3];r4=INT_RANK[c4]
+    s0=INT_SUIT[c0];s1=INT_SUIT[c1];s2=INT_SUIT[c2];s3=INT_SUIT[c3];s4=INT_SUIT[c4]
+    fl=s0==s1==s2==s3==s4
+    mask=(1<<r0)|(1<<r1)|(1<<r2)|(1<<r3)|(1<<r4)
+    st=mask in _STRAIGHTS
+    cnt=[0]*13
+    cnt[r0]+=1;cnt[r1]+=1;cnt[r2]+=1;cnt[r3]+=1;cnt[r4]+=1
+    fours=threes=pairs=0;top4=top3=top2a=top2b=-1
+    for rank in range(12,-1,-1):
+        c=cnt[rank]
+        if c==4:   fours+=1;top4=rank
+        elif c==3: threes+=1;top3=rank
+        elif c==2:
+            if pairs==0: top2a=rank
+            else: top2b=rank
+            pairs+=1
+    sh=3 if(st and mask==0b1000000001111) else(max(r0,r1,r2,r3,r4) if st else 0)
+    if st and fl: return(8,sh,0,0,0,0)
+    if fours:
+        k=max(r for r in(r0,r1,r2,r3,r4) if r!=top4)
+        return(7,top4,k,0,0,0)
+    if threes and pairs: return(6,top3,top2a,0,0,0)
+    if fl:
+        sr=sorted([r0,r1,r2,r3,r4],reverse=True)
+        return(5,sr[0],sr[1],sr[2],sr[3],sr[4])
+    if st: return(4,sh,0,0,0,0)
+    if threes:
+        kr=sorted([r for r in(r0,r1,r2,r3,r4) if r!=top3],reverse=True)
+        return(3,top3,kr[0],kr[1],0,0)
+    if pairs>=2:
+        k=max(r for r in(r0,r1,r2,r3,r4) if r!=top2a and r!=top2b)
+        return(2,max(top2a,top2b),min(top2a,top2b),k,0,0)
+    if pairs==1:
+        kr=sorted([r for r in(r0,r1,r2,r3,r4) if r!=top2a],reverse=True)
+        return(1,top2a,kr[0],kr[1],kr[2],0)
+    sr=sorted([r0,r1,r2,r3,r4],reverse=True)
+    return(0,sr[0],sr[1],sr[2],sr[3],sr[4])
+
+def hand_rank_int(card_ints):
+    n=len(card_ints)
+    if n==5: return eval5_int(*card_ints)
+    combos=COMBOS7 if n==7 else list(itertools.combinations(range(n),5))
+    ci=card_ints
+    return max(eval5_int(ci[i],ci[j],ci[k],ci[l],ci[m]) for i,j,k,l,m in combos)
+
+# Mantém interface original (strings) para get_draws, beating_hands, testes
 def evaluate_five(cards):
     ranks = sorted([RANK_VAL[c[:-1]] for c in cards], reverse=True)
     suits = [c[-1] for c in cards]
@@ -137,17 +222,19 @@ def label_board(hole, board):
     return ['Carta Alta','Um Par','Dois Pares','Trinca','Sequência',
             'Flush','Full House','Quadra','Straight Flush'][hand_rank(hole+board)[0]]
 
-# ─── MONTE CARLO ──────────────────────────────
+# ─── MONTE CARLO OTIMIZADO ────────────────────
 def monte_carlo(hole, board, opponents=1, n=10000, cb=None):
-    base = [c for c in FULL_DECK if c not in hole+board]
-    need = 5-len(board); wins=ties=losses=0; step=max(n//20,1)
+    base   = [CARD_INT[c] for c in FULL_DECK if c not in hole+board]
+    hole_i = [CARD_INT[c] for c in hole]
+    board_i= [CARD_INT[c] for c in board]
+    need=5-len(board); wins=ties=losses=0; step=max(n//20,1)
     for i in range(n):
-        deck=base.copy(); random.shuffle(deck)
-        sb=board+deck[:need]; idx=need
-        opps=[deck[idx+j*2:idx+j*2+2] for j in range(opponents)]
-        mine=hand_rank(hole+sb); best=max(hand_rank(o+sb) for o in opps)
-        if mine>best: wins+=1
-        elif mine==best: ties+=1
+        random.shuffle(base)
+        sb=board_i+base[:need]; idx=need
+        mine    =hand_rank_int(hole_i+sb)
+        best_opp=max(hand_rank_int(base[idx+j*2:idx+j*2+2]+sb) for j in range(opponents))
+        if mine>best_opp: wins+=1
+        elif mine==best_opp: ties+=1
         else: losses+=1
         if cb and (i+1)%step==0: cb(int((i+1)/n*90))
     return {'win':round(wins/n*100,1),'tie':round(ties/n*100,1),'lose':round(losses/n*100,1)}
@@ -191,14 +278,16 @@ def get_draws(hole, board):
 def monte_carlo_multi(hands, board=[], n=10000, cb=None):
     used=[c for h in hands for c in h]+list(board)
     if len(used)!=len(set(used)): raise ValueError("Cartas duplicadas.")
-    base=[c for c in FULL_DECK if c not in used]; nh=len(hands)
-    need=5-len(board)
+    base_i =[CARD_INT[c] for c in FULL_DECK if c not in used]
+    hands_i=[[CARD_INT[c] for c in h] for h in hands]
+    board_i=[CARD_INT[c] for c in board]
+    nh=len(hands); need=5-len(board)
     wins=[0]*nh; ties=[0]*nh; losses=[0]*nh; step=max(n//20,1)
     for i in range(n):
-        deck=base.copy(); random.shuffle(deck)
-        sim_board=list(board)+deck[:need]
-        scores=[hand_rank(h+sim_board) for h in hands]; best=max(scores)
-        winners=[i for i,s in enumerate(scores) if s==best]
+        random.shuffle(base_i)
+        sb=board_i+base_i[:need]
+        scores=[hand_rank_int(h+sb) for h in hands_i]; best=max(scores)
+        winners=[j for j,s in enumerate(scores) if s==best]
         if len(winners)==1:
             wins[winners[0]]+=1
             for j in range(nh):
@@ -221,7 +310,7 @@ def get_beating_hands(hole, board):
             cat=os[0]
             if cat not in bg: bg[cat]={'count':0,'examples':[]}
             bg[cat]['count']+=1
-            if len(bg[cat]['examples'])<4: bg[cat]['examples'].append(list(opp))
+            if len(bg[cat]['examples'])<6: bg[cat]['examples'].append(list(opp))
         elif os==my: tc+=1
     tb=sum(g['count'] for g in bg.values())
     result=[{'hand':HN[cat],'cat':cat,'count':bg[cat]['count'],'examples':bg[cat]['examples'],
@@ -447,7 +536,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 ::-webkit-scrollbar-thumb{background:var(--gold-dim);border-radius:3px;}
 select{background:rgba(13,35,24,.9);border:1px solid rgba(201,168,76,.25);color:var(--cream);outline:none;border-radius:6px;padding:6px 10px;font-family:'Rajdhani',sans-serif;font-size:13px;}
 /* ════════════════════════════════════════
-   MOBILE — 860px (tablet/landscape)
+   TABLET — 860px
 ════════════════════════════════════════ */
 @media(max-width:860px){
   .cols{flex-direction:column!important;}
@@ -460,88 +549,91 @@ select{background:rgba(13,35,24,.9);border:1px solid rgba(201,168,76,.25);color:
   main{padding:8px!important;}
   .glass{border-radius:10px;}
   .logo-sub{display:none;}
-  /* Abas: scroll horizontal sem barra */
   .hdr-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;max-width:70vw;}
   .hdr-tabs::-webkit-scrollbar{display:none;}
   .mode-tab{padding:6px 12px!important;font-size:11px!important;letter-spacing:.06em!important;white-space:nowrap;}
-  .ev-bet-btn{font-size:11px!important;}
 }
 
 /* ════════════════════════════════════════
-   MOBILE — 600px (celular portrait)
+   MOBILE — 600px  (redesign completo)
 ════════════════════════════════════════ */
 @media(max-width:600px){
-  /* ── Header ── */
-  header{padding:8px 12px!important;}
-  .hdr-right{gap:4px!important;}
-  #moe-badge{display:none!important;}
-  .logo{font-size:16px!important;letter-spacing:.08em!important;}
-  .hdr-tabs{max-width:58vw;}
-  .mode-tab{padding:5px 9px!important;font-size:10px!important;}
+  /* Espaço para bottom nav */
+  body{padding-bottom:68px!important;}
 
-  /* ── Main ── */
-  main{padding:6px!important;}
-  .glass{padding:12px!important;border-radius:10px;}
+  /* Header: só logo */
+  header{padding:10px 16px!important;}
+  .hdr-right{display:none!important;}
+  .logo{font-size:18px!important;}
 
-  /* ── Gauges ── */
-  .gauge{width:78px!important;height:78px!important;}
-  .g-svg{width:78px!important;height:78px!important;}
-  .g-pct{font-size:13px!important;}
-  .g-lbl{font-size:8px!important;}
-  .gauges-row{gap:4px!important;padding:4px 0!important;}
+  /* Bottom nav visível */
+  #mobile-bottom-nav{display:flex!important;}
 
-  /* ── Deck: cartas maiores p/ toque ── */
-  .playing-card{width:42px!important;height:59px!important;border-radius:5px!important;}
-  .card-rank,.card-suit{font-size:12px!important;}
-  /* Grid do deck com mais espaço entre cartas */
-  #deck-grid,#cmp-deck{gap:6px!important;padding:6px!important;}
+  /* Main */
+  main{padding:8px!important;}
+  .glass{padding:14px!important;border-radius:12px;}
 
-  /* ── Slots ── */
-  .slot{width:50px!important;height:70px!important;}
-  .slot-rank,.slot-suit{font-size:14px!important;}
+  /* Slots: sempre em linha horizontal, grandes e tocáveis */
+  #hole-slots{
+    display:flex!important;flex-direction:row!important;
+    gap:10px!important;justify-content:center!important;
+  }
+  #board-slots,#cmp-board-slots{
+    display:flex!important;flex-direction:row!important;
+    gap:8px!important;flex-wrap:nowrap!important;
+    overflow-x:auto;padding-bottom:4px;
+  }
+  .slot{width:58px!important;height:80px!important;flex-shrink:0!important;border-radius:8px!important;}
+  .slot-rank{font-size:18px!important;}
+  .slot-suit{font-size:18px!important;}
 
-  /* ── Quick hands ── */
-  .qh-btn{padding:5px 9px!important;font-size:11px!important;min-height:32px;}
-  .qh-scroll{gap:5px!important;}
+  /* Deck mobile: por naipe, scroll horizontal */
+  #deck-grid-wrap-desktop{display:none!important;}
+  #deck-mobile{display:flex!important;}
+  .playing-card{width:50px!important;height:70px!important;flex-shrink:0!important;border-radius:7px!important;}
+  .card-rank,.card-suit{font-size:14px!important;}
 
-  /* ── Opções: empilha selects ── */
-  #mode-calc .flex.gap-3{flex-direction:column!important;gap:8px!important;}
+  /* Quick hands: scroll horizontal, sem quebra */
+  .qh-scroll{flex-wrap:nowrap!important;overflow-x:auto!important;-webkit-overflow-scrolling:touch;scrollbar-width:none;gap:6px!important;}
+  .qh-scroll::-webkit-scrollbar{display:none;}
+  .qh-btn{min-width:50px;flex-shrink:0;padding:7px 10px!important;font-size:12px!important;min-height:36px;}
 
-  /* ── EV inputs ── */
+  /* Gauges */
+  .gauge{width:88px!important;height:88px!important;}
+  .g-svg{width:88px!important;height:88px!important;}
+  .g-pct{font-size:15px!important;}
+  .g-lbl{font-size:9px!important;}
+  .gauges-row{gap:6px!important;}
+
+  /* Street pills */
+  #sp-pre,#sp-flop,#sp-turn,#sp-river{padding:3px 8px!important;font-size:9px!important;}
+
+  /* EV */
   .ev-input{font-size:16px!important;padding:10px 12px!important;}
-  .ev-bet-btn{font-size:11px!important;padding:8px 0!important;min-height:36px;}
+  .ev-bet-btn{padding:9px 0!important;min-height:40px;font-size:11px!important;}
   #import-btn{font-size:12px!important;padding:12px!important;}
 
-  /* ── Resultado cards do confronto ── */
+  /* Confronto */
   .result-card{padding:12px!important;}
   #cmp-results{grid-template-columns:1fr!important;}
-
-  /* ── Oculta tabela de referência (ocupa espaço sem uso em mobile) ── */
-  .ref-table-wrap{display:none!important;}
-
-  /* ── Player panels no confronto ── */
   .player-panel{padding:10px 12px!important;}
 
-  /* ── Board slots menores ── */
-  #board-slots .slot,#cmp-board-slots .slot{width:46px!important;height:64px!important;}
-
-  /* ── Barras de equity ── */
-  #eq-bars .text-xs.w-14{width:40px!important;font-size:10px!important;}
+  /* Ocultar elementos desnecessários */
+  .ref-table-wrap{display:none!important;}
+  #moe-badge{display:none!important;}
+  .logo-sub{display:none!important;}
 }
 
 /* ════════════════════════════════════════
-   MOBILE — 400px (iPhone SE / pequenos)
+   MOBILE — 400px (iPhone SE)
 ════════════════════════════════════════ */
 @media(max-width:400px){
-  .playing-card{width:36px!important;height:51px!important;}
-  .card-rank,.card-suit{font-size:10px!important;}
-  #deck-grid,#cmp-deck{gap:4px!important;padding:4px!important;}
-  .gauge{width:68px!important;height:68px!important;}
-  .g-svg{width:68px!important;height:68px!important;}
-  .g-pct{font-size:11px!important;}
-  .hdr-tabs{max-width:54vw;}
-  .mode-tab{padding:4px 7px!important;font-size:9px!important;}
-  .slot{width:44px!important;height:61px!important;}
+  .playing-card{width:44px!important;height:62px!important;}
+  .card-rank,.card-suit{font-size:12px!important;}
+  .slot{width:52px!important;height:72px!important;}
+  .gauge{width:76px!important;height:76px!important;}
+  .g-svg{width:76px!important;height:76px!important;}
+  .g-pct{font-size:13px!important;}
 }
 
 /* ── Tooltip ── */
@@ -578,7 +670,50 @@ input[type=number]::-webkit-inner-spin-button{opacity:0.4;}
 input[type=number]{-moz-appearance:textfield;}
 input.ev-input{width:100%;padding:10px 14px;border-radius:10px;font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;background:rgba(13,35,24,.9);border:1px solid rgba(201,168,76,.25);color:var(--cream);outline:none;transition:border-color .15s;}
 input.ev-input:focus{border-color:var(--gold);}
-/* ── Poker Table ── */
+/* ── Splash Screen (acordando servidor) ── */
+#splash{position:fixed;inset:0;background:#071a10;z-index:99999;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;
+  transition:opacity .5s ease;}
+#splash.hidden{opacity:0;pointer-events:none;}
+.splash-suit{font-size:56px;animation:splash-pulse 1.5s ease infinite;}
+@keyframes splash-pulse{0%,100%{opacity:.4;transform:scale(1);}50%{opacity:1;transform:scale(1.1);}}
+.splash-title{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:28px;
+  letter-spacing:.2em;color:#c9a84c;text-shadow:0 0 20px rgba(201,168,76,.4);}
+.splash-msg{font-family:'Rajdhani',sans-serif;font-size:14px;
+  color:rgba(255,255,255,.4);letter-spacing:.08em;text-align:center;max-width:280px;line-height:1.6;}
+.splash-bar-wrap{width:200px;height:3px;border-radius:2px;background:rgba(255,255,255,.08);}
+.splash-bar{height:100%;border-radius:2px;background:linear-gradient(90deg,#c9a84c,#e8c96d);
+  width:0%;animation:splash-load 3s ease forwards;}
+@keyframes splash-load{0%{width:0%;}60%{width:75%;}90%{width:90%;}100%{width:100%;}}
+/* ── Bottom Nav (mobile) ── */
+#mobile-bottom-nav{
+  display:none;position:fixed;bottom:0;left:0;right:0;
+  background:rgba(7,20,12,.98);border-top:1px solid rgba(201,168,76,.2);
+  backdrop-filter:blur(12px);z-index:1000;height:68px;
+}
+.mob-tab{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:3px;padding:8px 4px;
+  background:transparent;border:none;cursor:pointer;
+  font-family:'Rajdhani',sans-serif;font-weight:700;
+  font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+  color:rgba(201,168,76,.35);transition:all .2s;
+}
+.mob-tab.active{color:var(--gold);}
+.mob-tab-icon{font-size:22px;line-height:1;transition:all .2s;}
+.mob-tab.active .mob-tab-icon{text-shadow:0 0 14px rgba(201,168,76,.7);}
+/* ── Mobile deck ── */
+#deck-mobile{flex-direction:column;gap:8px;display:none;}
+.deck-suit-row{
+  display:flex;gap:5px;align-items:center;
+  overflow-x:auto;-webkit-overflow-scrolling:touch;
+  padding:3px 0;scrollbar-width:none;
+}
+.deck-suit-row::-webkit-scrollbar{display:none;}
+.deck-suit-label{
+  font-family:'Rajdhani',sans-serif;font-weight:700;font-size:20px;
+  width:26px;flex-shrink:0;display:flex;align-items:center;
+}
 .poker-table-wrap{position:relative;width:100%;padding-bottom:58%;min-height:200px;}
 .poker-table-inner{position:absolute;inset:0;}
 .t-card{position:absolute;background:var(--card-bg);border-radius:5px;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(0,0,0,.65),inset 0 1px 0 rgba(255,255,255,.85);transition:transform .2s,opacity .2s;}
@@ -595,6 +730,28 @@ input.ev-input:focus{border-color:var(--gold);}
 </style>
 </head>
 <body>
+<!-- SPLASH SCREEN — aparece enquanto o servidor acorda -->
+<div id="splash">
+  <span class="splash-suit">♠</span>
+  <div class="splash-title">POKERCALC</div>
+  <p class="splash-msg">Acordando o servidor...<br>Isso pode levar até 30 segundos na primeira visita.</p>
+  <div class="splash-bar-wrap"><div class="splash-bar"></div></div>
+</div>
+<!-- BOTTOM NAV — só aparece em mobile (≤600px) -->
+<nav id="mobile-bottom-nav" style="display:none">
+  <button class="mob-tab active" id="mob-tab-calc" onclick="switchMode('calc');setMobTab('calc')">
+    <span class="mob-tab-icon">♠</span>
+    <span>Calculadora</span>
+  </button>
+  <button class="mob-tab" id="mob-tab-ev" onclick="switchMode('ev');setMobTab('ev')">
+    <span class="mob-tab-icon">📊</span>
+    <span>Pot Odds</span>
+  </button>
+  <button class="mob-tab" id="mob-tab-compare" onclick="switchMode('compare');setMobTab('compare')">
+    <span class="mob-tab-icon">⚔️</span>
+    <span>Confronto</span>
+  </button>
+</nav>
 <div class="z1 min-h-screen flex flex-col">
 
 <header class="hdr px-4 py-3 flex items-center justify-between sticky top-0 z-50">
@@ -656,23 +813,34 @@ input.ev-input:focus{border-color:var(--gold);}
           <button class="stab" id="tab-c" onclick="filterSuit('c','calc')" style="color:#aaa">♣</button>
         </div>
       </div>
-      <div id="deck-grid" style="display:flex;flex-wrap:wrap;gap:4px;max-height:260px;overflow-y:auto;padding:4px"></div>
+      <!-- Desktop: grid normal -->
+      <div id="deck-grid-wrap-desktop">
+        <div id="deck-grid" style="display:flex;flex-wrap:wrap;gap:4px;max-height:260px;overflow-y:auto;padding:4px"></div>
+      </div>
+      <!-- Mobile: uma linha por naipe com scroll horizontal -->
+      <div id="deck-mobile" style="display:none"></div>
     </div>
+    <!-- Opções + Botão juntos -->
     <div class="glass p-4">
-      <p class="stitle mb-3">Opções</p>
-      <div class="flex gap-3 mb-4">
-        <div class="flex-1"><label class="text-xs" style="color:var(--gold-dim)">Oponentes</label>
-          <select id="opponents" class="w-full mt-1"><option value="1">1 oponente</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option></select></div>
-        <div class="flex-1"><label class="text-xs" style="color:var(--gold-dim)">Simulações</label>
-          <select id="simulations" class="w-full mt-1"><option value="5000" selected>5.000</option><option value="10000">10.000</option></select></div>
+      <!-- Oponentes e Simulações em linha compacta -->
+      <div class="flex gap-3 mb-3">
+        <div class="flex-1">
+          <label class="text-xs" style="color:var(--gold-dim)">Oponentes</label>
+          <select id="opponents" class="w-full mt-1"><option value="1">1 oponente</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option></select>
+        </div>
+        <div class="flex-1">
+          <label class="text-xs" style="color:var(--gold-dim)">Simulações</label>
+          <select id="simulations" class="w-full mt-1"><option value="5000" selected>5.000</option><option value="10000">10.000</option></select>
+        </div>
       </div>
-      <div class="flex gap-3">
-        <button class="btn-calc flex-1 flex items-center justify-center gap-2" id="calc-btn" onclick="doCalculate()">
-          <span id="btn-txt">CALCULAR ODDS</span><div class="loader" id="loader"></div>
-        </button>
-        <button class="btn-rst" onclick="resetCalc()">RESET</button>
-      </div>
+      <!-- Botão CALCULAR ODDS grande -->
+      <button class="btn-calc w-full flex items-center justify-center gap-3" id="calc-btn" onclick="doCalculate()"
+        style="padding:18px 28px;font-size:18px;letter-spacing:.2em;border-radius:10px;">
+        <span id="btn-txt">CALCULAR ODDS</span>
+        <div class="loader" id="loader"></div>
+      </button>
       <div class="progress-wrap" id="calc-prog-wrap" style="display:none"><div class="progress-fill" id="calc-prog-fill"></div></div>
+      <button class="btn-rst w-full mt-2" onclick="resetCalc()" style="font-size:11px;padding:7px;">RESET</button>
     </div>
   </div>
   <div class="flex-1 flex flex-col gap-4">
@@ -715,7 +883,7 @@ input.ev-input:focus{border-color:var(--gold);}
       <div id="draws-box"><p class="text-xs text-center py-6" style="color:rgba(255,255,255,.2);letter-spacing:.1em">CALCULE PARA VER OS DRAWS DISPONÍVEIS</p></div>
     </div>
     <div class="glass p-5" id="winning-cards-panel" style="display:none">
-      <div class="flex items-center justify-between mb-1">
+      <div class="flex items-center justify-between mb-2">
         <div class="flex items-center gap-2">
           <span style="font-size:15px">⚠️</span>
           <p class="stitle">Mãos que te Vencem</p>
@@ -727,15 +895,19 @@ input.ev-input:focus{border-color:var(--gold);}
         <span id="beat-badge" class="text-xs font-mono px-2 py-0.5 rounded" style="border:1px solid rgba(231,76,60,.3);background:rgba(231,76,60,.1);color:#e74c3c">—</span>
       </div>
       <p class="text-xs mb-4" style="color:rgba(255,255,255,.3);line-height:1.5">Todos os pares possíveis no deck que superam sua mão atual.</p>
+      <!-- Sem limite de altura — mostra todos os grupos -->
       <div id="winning-cards-box"></div>
     </div>
-    <div class="glass p-4 ref-table-wrap">
-      <p class="stitle mb-3">Referência — Regra dos Outs</p>
-      <div class="grid grid-cols-2 gap-2 text-xs font-mono">
-        <div class="flex justify-between px-3 py-2 rounded" style="background:rgba(255,255,255,.03)"><span style="color:rgba(255,255,255,.45)">4 outs (gutshot)</span><span>8.7% / 16.5%</span></div>
-        <div class="flex justify-between px-3 py-2 rounded" style="background:rgba(255,255,255,.03)"><span style="color:rgba(255,255,255,.45)">8 outs (oesd)</span><span>17.4% / 31.5%</span></div>
-        <div class="flex justify-between px-3 py-2 rounded" style="background:rgba(255,255,255,.03)"><span style="color:rgba(255,255,255,.45)">9 outs (flush)</span><span>19.6% / 35.0%</span></div>
-        <div class="flex justify-between px-3 py-2 rounded" style="background:rgba(255,255,255,.03)"><span style="color:rgba(255,255,255,.45)">Formato</span><span style="color:var(--gold-dim)">Turn / River</span></div>
+    <!-- Referência compacta — linha única -->
+    <div class="glass px-4 py-3 ref-table-wrap">
+      <div class="flex items-center justify-between flex-wrap gap-2">
+        <span class="stitle" style="font-size:10px">Regra dos Outs</span>
+        <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs font-mono" style="color:rgba(255,255,255,.4)">
+          <span>4 outs <span style="color:var(--cream)">8.7%</span></span>
+          <span>8 outs <span style="color:var(--cream)">17.4%</span></span>
+          <span>9 outs <span style="color:var(--cream)">19.6%</span></span>
+          <span style="color:var(--gold-dim)">Turn / River</span>
+        </div>
       </div>
     </div>
   </div>
@@ -955,9 +1127,78 @@ function switchMode(m){
     const t=document.getElementById('tab-'+id);
     if(t) t.classList.toggle('active',m===id);
   });
+  // Sync bottom nav
+  document.querySelectorAll('.mob-tab').forEach(t=>t.classList.remove('active'));
+  const mt=document.getElementById('mob-tab-'+m);
+  if(mt) mt.classList.add('active');
 }
 
-// ── SUIT FILTER ──
+// ── MOBILE: bottom nav e deck por naipe ──────────────
+const SUIT_LABEL_MAP={s:'♠',h:'♥',d:'♦',c:'♣'};
+const SUIT_COLOR_MAP={s:'#9ca3af',h:'var(--red-suit)',d:'var(--red-suit)',c:'#9ca3af'};
+
+function isMobile(){return window.innerWidth<=600;}
+
+function buildMobileDeck(){
+  const mob=document.getElementById('deck-mobile');
+  if(!mob)return;
+  const used=[...hole,...board].filter(Boolean);
+  mob.innerHTML='';
+  for(const s of SUITS){
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;align-items:center;gap:4px;';
+    // Ícone do naipe
+    const lbl2=document.createElement('span');
+    lbl2.className='deck-suit-label';
+    lbl2.style.color=SUIT_COLOR_MAP[s];
+    lbl2.textContent=SUIT_LABEL_MAP[s];
+    row.appendChild(lbl2);
+    // Linha de cartas
+    const cardsRow=document.createElement('div');
+    cardsRow.className='deck-suit-row';
+    for(const r of RANKS){
+      const c=r+s;const{r:dr,s:ds,red}=lbl(c);
+      const el=document.createElement('div');
+      el.className=`playing-card ${red?'red-card':'black-card'}`;
+      if(used.includes(c))el.classList.add('used');
+      el.innerHTML=`<span class="card-rank">${dr}</span><span class="card-suit">${ds}</span>`;
+      el.onclick=()=>calcPick(c);
+      cardsRow.appendChild(el);
+    }
+    row.appendChild(cardsRow);
+    mob.appendChild(row);
+  }
+}
+
+function applyLayout(){
+  const mobile=isMobile();
+  const mobDeck=document.getElementById('deck-mobile');
+  const dskDeck=document.getElementById('deck-grid-wrap-desktop');
+  if(mobDeck) mobDeck.style.display=mobile?'flex':'none';
+  if(dskDeck) dskDeck.style.display=mobile?'none':'block';
+  if(mobile) buildMobileDeck();
+  else buildDeck();
+}
+window.addEventListener('resize',applyLayout);
+
+// ── SPLASH SCREEN ──
+(function(){
+  const splash = document.getElementById('splash');
+  if(!splash) return;
+  // Esconde o splash quando a página estiver pronta
+  function hideSplash(){
+    splash.classList.add('hidden');
+    setTimeout(()=>{ splash.style.display='none'; }, 500);
+  }
+  // Se a página já carregou (cache), esconde imediatamente
+  if(document.readyState === 'complete'){
+    setTimeout(hideSplash, 800);
+  } else {
+    window.addEventListener('load', ()=>{ setTimeout(hideSplash, 800); });
+  }
+  // Timeout de segurança: esconde após 15s mesmo que não carregue
+  setTimeout(hideSplash, 15000);
+})();
 function filterSuit(s,ctx){
   if(ctx==='calc'){calcSuit=s;document.querySelectorAll('#mode-calc .stab').forEach(t=>t.classList.remove('on'));document.getElementById('tab-'+s).classList.add('on');buildDeck();}
   else{cmpSuit=s;document.querySelectorAll('#mode-compare .stab').forEach(t=>t.classList.remove('on'));document.getElementById('ctab-'+s).classList.add('on');buildCmpDeck();}
@@ -984,7 +1225,9 @@ function calcPick(c){
   const used=[...hole,...board].filter(Boolean);if(used.includes(c))return;
   const{type,index}=calcSlot;
   if(type==='hole')hole[index]=c;else board[index]=c;
-  renderCalcSlots();buildDeck();updateStreet();
+  renderCalcSlots();
+  if(isMobile()) buildMobileDeck(); else buildDeck();
+  updateStreet();
   if(type==='hole'){const nx=hole.findIndex(x=>!x);if(nx!==-1)activateCalcSlot('hole',nx);else{const bn=board.findIndex(x=>!x);if(bn!==-1)activateCalcSlot('board',bn);}}
   else{const nx=board.findIndex(x=>!x);if(nx!==-1)activateCalcSlot('board',nx);}
 }
@@ -1012,14 +1255,26 @@ function setGauge(id,pct){const el=document.getElementById(id);if(el)el.style.st
 
 // ── POLLING ──
 async function pollJob(jid, onProg, onDone, onErr){
+  let attempts = 0;
   const iv=setInterval(async()=>{
+    attempts++;
+    // Timeout de segurança: 5 minutos máximo
+    if(attempts > 1200){ clearInterval(iv); onErr('Tempo esgotado.'); return; }
     try{
-      const r=await fetch('/status/'+jid);const j=await r.json();
-      if(j.error&&!j.status){clearInterval(iv);onErr(j.error);return;}
-      if(j.progress)onProg(j.progress);
-      if(j.status==='done'){clearInterval(iv);onDone(j.result);}
-      if(j.status==='error'){clearInterval(iv);onErr(j.error);}
-    }catch{clearInterval(iv);onErr('Erro de conexão.');}
+      const r=await fetch('/status/'+jid);
+      // 404 = job não encontrado (servidor reiniciou ou job expirou)
+      if(r.status===404){ clearInterval(iv); onErr('Servidor reiniciou. Tente calcular novamente.'); return; }
+      // 429 = rate limit
+      if(r.status===429){ clearInterval(iv); onErr('Muitas requisições. Aguarde e tente novamente.'); return; }
+      const j=await r.json();
+      if(j.error && !j.status){ clearInterval(iv); onErr(j.error); return; }
+      if(j.progress !== undefined) onProg(j.progress);
+      if(j.status==='done'){ clearInterval(iv); onDone(j.result); }
+      if(j.status==='error'){ clearInterval(iv); onErr(j.error||'Erro no cálculo.'); }
+    }catch(e){
+      // Rede caiu momentaneamente — tenta de novo (não encerra)
+      if(attempts > 20){ clearInterval(iv); onErr('Erro de conexão.'); }
+    }
   },250);
 }
 function setProgress(prefix,pct){
@@ -1118,7 +1373,7 @@ function renderBeatingHands(data){
 
 function resetCalc(){
   hole=[null,null];board=[null,null,null,null,null];calcSlot={type:'hole',index:0};
-  renderCalcSlots();buildDeck();activateCalcSlot('hole',0);updateStreet();
+  renderCalcSlots();applyLayout();activateCalcSlot('hole',0);updateStreet();
   ['win','tie','lose'].forEach(k=>{setGauge('gc-'+k,0);document.getElementById(k+'-pct').textContent='—';});
   document.getElementById('eq-bars').style.display='none';document.getElementById('hand-badge').style.display='none';
   document.getElementById('winning-cards-panel').style.display='none';
@@ -1627,7 +1882,7 @@ function applyQuickHand(cards){
 }
 
 // ── INIT ──
-renderCalcSlots();buildDeck();activateCalcSlot('hole',0);updateStreet();
+renderCalcSlots();applyLayout();activateCalcSlot('hole',0);updateStreet();
 buildQuickHands();
 renderPlayers();renderCmpBoardSlots();buildCmpDeck();updateCmpStreet();
 calcEV();
@@ -1665,6 +1920,17 @@ document.addEventListener('touchstart', e=>{
 </script>
 </body>
 </html>"""
+
+@app.route('/healthcheck')
+def healthcheck():
+    """Endpoint leve para anti-hibernação (UptimeRobot / cron-job.org)."""
+    return jsonify({
+        'status': 'ok',
+        'service': 'pokercalc',
+        'jobs_active': sum(1 for j in _JOBS.values() if j['status'] == 'running'),
+        'cache_entries': len(_CACHE),
+        'ts': int(time.time())
+    })
 
 @app.route('/')
 def index():
@@ -1753,7 +2019,8 @@ if __name__ == '__main__':
     if '--test' in sys.argv:
         sys.exit(0 if run_tests() else 1)
     print("\n  ♠  PokerCalc rodando em → http://localhost:8080")
-    print("  Dica: python app.py --test  para rodar os testes\n")
-    port = int(os.environ.get('PORT', 8080))
+    print("  Dica: python app.py --test  para rodar os testes")
+    print("  Produção: gunicorn app:app --workers 2 --threads 4 --timeout 120\n")
+    port  = int(os.environ.get('PORT', 8080))
     debug = os.environ.get('FLASK_ENV') != 'production'
     app.run(debug=debug, host='0.0.0.0', port=port)
