@@ -607,6 +607,7 @@ select{background:rgba(13,35,24,.9);border:1px solid rgba(201,168,76,.25);color:
   #board-slots,#cmp-board-slots{
     display:flex!important;flex-direction:row!important;
     gap:8px!important;flex-wrap:nowrap!important;
+    justify-content:center!important;
     overflow-x:auto;padding-bottom:4px;
   }
   .slot{width:58px!important;height:80px!important;flex-shrink:0!important;border-radius:8px!important;}
@@ -616,6 +617,8 @@ select{background:rgba(13,35,24,.9);border:1px solid rgba(201,168,76,.25);color:
   /* Deck mobile: por naipe, scroll horizontal */
   #deck-grid-wrap-desktop{display:none!important;}
   #deck-mobile{display:flex!important;}
+  /* Esconde filtro de naipe no mobile (deck já é por naipe) */
+  #mode-calc .stab, #mode-compare .stab{display:none!important;}
   .playing-card{width:50px!important;height:70px!important;flex-shrink:0!important;border-radius:7px!important;}
   .card-rank,.card-suit{font-size:14px!important;}
 
@@ -1226,8 +1229,19 @@ window.addEventListener('resize',applyLayout);
   setTimeout(hideSplash, 15000);
 })();
 function filterSuit(s,ctx){
-  if(ctx==='calc'){calcSuit=s;document.querySelectorAll('#mode-calc .stab').forEach(t=>t.classList.remove('on'));document.getElementById('tab-'+s).classList.add('on');buildDeck();}
-  else{cmpSuit=s;document.querySelectorAll('#mode-compare .stab').forEach(t=>t.classList.remove('on'));document.getElementById('ctab-'+s).classList.add('on');buildCmpDeck();}
+  if(ctx==='calc'){
+    calcSuit=s;
+    document.querySelectorAll('#mode-calc .stab').forEach(t=>t.classList.remove('on'));
+    document.getElementById('tab-'+s).classList.add('on');
+    // No mobile o filtro de naipe não se aplica (deck já é por naipe)
+    // Mas mantém buildDeck para desktop e buildMobileDeck para mobile
+    if(isMobile()) buildMobileDeck(); else buildDeck();
+  } else {
+    cmpSuit=s;
+    document.querySelectorAll('#mode-compare .stab').forEach(t=>t.classList.remove('on'));
+    document.getElementById('ctab-'+s).classList.add('on');
+    buildCmpDeck();
+  }
 }
 
 // ── CALC DECK ──
