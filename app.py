@@ -731,21 +731,129 @@ input[type=number]::-webkit-inner-spin-button{opacity:0.4;}
 input[type=number]{-moz-appearance:textfield;}
 input.ev-input{width:100%;padding:10px 14px;border-radius:10px;font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;background:rgba(13,35,24,.9);border:1px solid rgba(201,168,76,.25);color:var(--cream);outline:none;transition:border-color .15s;}
 input.ev-input:focus{border-color:var(--gold);}
-/* ── Splash Screen (acordando servidor) ── */
-#splash{position:fixed;inset:0;background:#071a10;z-index:99999;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;
-  transition:opacity .5s ease;}
+/* ── Splash Screen ── */
+#splash{
+  position:fixed;inset:0;z-index:99999;
+  background:#071a10;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;
+  transition:opacity .6s ease;
+}
 #splash.hidden{opacity:0;pointer-events:none;}
-.splash-suit{font-size:56px;animation:splash-pulse 1.5s ease infinite;}
-@keyframes splash-pulse{0%,100%{opacity:.4;transform:scale(1);}50%{opacity:1;transform:scale(1.1);}}
-.splash-title{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:28px;
-  letter-spacing:.2em;color:#c9a84c;text-shadow:0 0 20px rgba(201,168,76,.4);}
-.splash-msg{font-family:'Rajdhani',sans-serif;font-size:14px;
-  color:rgba(255,255,255,.4);letter-spacing:.08em;text-align:center;max-width:280px;line-height:1.6;}
-.splash-bar-wrap{width:200px;height:3px;border-radius:2px;background:rgba(255,255,255,.08);}
-.splash-bar{height:100%;border-radius:2px;background:linear-gradient(90deg,#c9a84c,#e8c96d);
-  width:0%;animation:splash-load 3s ease forwards;}
-@keyframes splash-load{0%{width:0%;}60%{width:75%;}90%{width:90%;}100%{width:100%;}}
+
+/* Felt texture no splash */
+#splash::before{
+  content:'';position:absolute;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect width='4' height='4' fill='%230d2318'/%3E%3Crect x='0' y='0' width='1' height='1' fill='%230f2a1c' opacity='0.5'/%3E%3C/svg%3E");
+  pointer-events:none;
+}
+
+/* Logo container */
+.splash-logo{
+  position:relative;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:20px;
+  z-index:1;
+}
+
+/* Os 4 naipes em cruz */
+.splash-suits{
+  position:relative;width:120px;height:120px;
+  display:flex;align-items:center;justify-content:center;
+}
+.splash-suit-item{
+  position:absolute;font-size:38px;line-height:1;
+  animation:suitFadeIn .6s ease forwards;
+  opacity:0;
+}
+.splash-suit-item.s{ top:0;    left:50%; transform:translateX(-50%); color:#c9a84c; animation-delay:.1s; }
+.splash-suit-item.h{ right:0;  top:50%;  transform:translateY(-50%); color:#e74c3c; animation-delay:.25s; }
+.splash-suit-item.d{ bottom:0; left:50%; transform:translateX(-50%); color:#e74c3c; animation-delay:.4s; }
+.splash-suit-item.c{ left:0;   top:50%;  transform:translateY(-50%); color:#c9a84c; animation-delay:.55s; }
+
+/* Centro da cruz */
+.splash-suit-center{
+  width:48px;height:48px;border-radius:50%;
+  background:linear-gradient(135deg,#c9a84c,#e8c96d);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 30px rgba(201,168,76,.5);
+  animation:centerPop .4s cubic-bezier(.34,1.56,.64,1) .6s both;
+  opacity:0;
+}
+.splash-suit-center span{
+  font-family:'Rajdhani',sans-serif;font-weight:700;
+  font-size:20px;color:#071a10;letter-spacing:.05em;
+}
+
+/* Nome */
+.splash-name{
+  font-family:'Rajdhani',sans-serif;font-weight:700;
+  font-size:36px;letter-spacing:.3em;color:var(--gold);
+  text-shadow:0 0 30px rgba(201,168,76,.5);
+  animation:nameSlide .5s ease .8s both;
+  opacity:0;
+}
+.splash-name span{color:rgba(255,255,255,.35);}
+
+/* Tagline */
+.splash-tag{
+  font-family:'JetBrains Mono',monospace;font-size:11px;
+  letter-spacing:.2em;color:rgba(255,255,255,.25);
+  text-transform:uppercase;
+  animation:nameSlide .5s ease 1s both;
+  opacity:0;
+  margin-top:-8px;
+}
+
+/* Barra de progresso */
+.splash-bar-wrap{
+  width:160px;height:2px;border-radius:1px;
+  background:rgba(255,255,255,.06);overflow:hidden;
+  animation:nameSlide .4s ease 1.1s both;opacity:0;
+  margin-top:32px;
+}
+.splash-bar{
+  height:100%;border-radius:1px;
+  background:linear-gradient(90deg,#7a6230,#c9a84c,#e8c96d,#c9a84c);
+  background-size:200% 100%;
+  animation:barShimmer 1.5s ease 1.2s infinite, splash-load 3s ease 1s forwards;
+  width:0%;
+}
+
+/* Mensagem de loading */
+.splash-msg{
+  font-family:'Rajdhani',sans-serif;font-size:12px;
+  color:rgba(255,255,255,.2);letter-spacing:.1em;
+  animation:nameSlide .4s ease 1.3s both;opacity:0;
+  margin-top:12px;text-align:center;
+}
+
+@keyframes suitFadeIn{
+  from{opacity:0;transform:translateX(-50%) scale(.5);}
+  to  {opacity:1;transform:translateX(-50%) scale(1);}
+}
+@keyframes suitFadeIn-h{
+  from{opacity:0;transform:translateY(-50%) scale(.5);}
+  to  {opacity:1;transform:translateY(-50%) scale(1);}
+}
+.splash-suit-item.h{animation-name:suitFadeIn-h;}
+.splash-suit-item.c{animation-name:suitFadeIn-h;}
+@keyframes centerPop{
+  from{opacity:0;transform:scale(0);}
+  to  {opacity:1;transform:scale(1);}
+}
+@keyframes nameSlide{
+  from{opacity:0;transform:translateY(12px);}
+  to  {opacity:1;transform:translateY(0);}
+}
+@keyframes barShimmer{
+  0%  {background-position:200% 0;}
+  100%{background-position:-200% 0;}
+}
+@keyframes splash-load{
+  0%  {width:0%;}
+  50% {width:60%;}
+  80% {width:85%;}
+  100%{width:100%;}
+}
 /* ── Bottom Nav (mobile) ── */
 #mobile-bottom-nav{
   display:none;position:fixed;bottom:0;left:0;right:0;
@@ -791,12 +899,24 @@ input.ev-input:focus{border-color:var(--gold);}
 </style>
 </head>
 <body>
-<!-- SPLASH SCREEN — aparece enquanto o servidor acorda -->
+<!-- SPLASH SCREEN -->
 <div id="splash">
-  <span class="splash-suit">♠</span>
-  <div class="splash-title">POKERCALC</div>
-  <p class="splash-msg">Acordando o servidor...<br>Isso pode levar até 30 segundos na primeira visita.</p>
-  <div class="splash-bar-wrap"><div class="splash-bar"></div></div>
+  <div class="splash-logo">
+    <!-- Cruz de naipes -->
+    <div class="splash-suits">
+      <span class="splash-suit-item s">♠</span>
+      <span class="splash-suit-item h">♥</span>
+      <span class="splash-suit-item d">♦</span>
+      <span class="splash-suit-item c">♣</span>
+      <div class="splash-suit-center"><span>PC</span></div>
+    </div>
+    <!-- Nome -->
+    <div class="splash-name">POKER<span>CALC</span></div>
+    <div class="splash-tag">Probability Engine</div>
+    <!-- Barra -->
+    <div class="splash-bar-wrap"><div class="splash-bar"></div></div>
+    <p class="splash-msg">Carregando...</p>
+  </div>
 </div>
 <!-- BOTTOM NAV — só aparece em mobile (≤600px) -->
 <nav id="mobile-bottom-nav" style="display:none">
