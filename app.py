@@ -121,7 +121,7 @@ def _prune():
 
 def new_job():
     _prune(); jid = str(uuid.uuid4())[:8]
-    _JOBS[jid] = {'status':'running','progress':0,'result':None,'error':None,'ts':time.time()}
+    _JOBS[jid] = {'status':'running','progress':0,'result':None,'partial':None,'error':None,'ts':time.time()}
     return jid
 
 def job_done(jid, r):
@@ -130,6 +130,8 @@ def job_fail(jid, e):
     if jid in _JOBS: _JOBS[jid].update({'status':'error','error':e,'ts':time.time()})
 def job_prog(jid, p):
     if jid in _JOBS: _JOBS[jid]['progress'] = p
+def job_partial(jid, r):
+    if jid in _JOBS: _JOBS[jid]['partial'] = r
 
 # ─── AVALIADOR OTIMIZADO (bitmask, ~2x mais rápido) ──
 SUIT_IDX  = {'s':0,'h':1,'d':2,'c':3}
@@ -323,14 +325,32 @@ def _run_calc(jid, hole, board, opp, sims):
     try:
         k=_ckey(hole,board,opp,sims); c=cache_get(k)
         if c: job_done(jid,c); return
-        eq=monte_carlo(hole,board,opp,sims,cb=lambda p:job_prog(jid,p))
+
         drw=get_draws(hole,board)
-        nm=label_pre(hole) if not board else label_board(hole,board)
-        st={0:'Pré-Flop',3:'Flop',4:'Turn',5:'River'}.get(len(board),'Flop')
-        moe=round(100/(sims**0.5),2); job_prog(jid,90)
-        beating=get_beating_hands(hole,board) if eq['win']>=50 and board else None
-        r={'equity':eq,'draws':drw,'hand_name':nm,'street':st,
-           'simulations':sims,'margin_of_error':moe,'beating_hands':beating}
+        nm =label_pre(hole) if not board else label_board(hole,board)
+        st ={0:'Pré-Flop',3:'Flop',4:'Turn',5:'River'}.get(len(board),'Flop')
+
+        # ── Fase 1: resultado rápido com 500 sims ──
+        QUICK = 500
+        if sims > QUICK:
+            eq_quick = monte_carlo(hole,board,opp,QUICK)
+            moe_quick = round(100/(QUICK**0.5),2)
+            partial = {'equity':eq_quick,'draws':drw,'hand_name':nm,'street':st,
+                       'simulations':QUICK,'margin_of_error':moe_quick,'beating_hands':None,'partial':True}
+            job_partial(jid, partial)
+            job_prog(jid, 15)
+
+        # ── Fase 2: resultado completo ──
+        def cb(p):
+            # mapeia progresso da fase 2 para 15-95%
+            job_prog(jid, 15 + int(p * 0.80))
+
+        eq   = monte_carlo(hole,board,opp,sims,cb=cb)
+        moe  = round(100/(sims**0.5),2)
+        job_prog(jid, 95)
+        beating = get_beating_hands(hole,board) if eq['win']>=50 and board else None
+        r = {'equity':eq,'draws':drw,'hand_name':nm,'street':st,
+             'simulations':sims,'margin_of_error':moe,'beating_hands':beating,'partial':False}
         cache_set(k,r); job_done(jid,r)
     except Exception as e: job_fail(jid,str(e))
 
@@ -407,7 +427,13 @@ def compare():
 def status(jid):
     j=_JOBS.get(jid)
     if not j: return jsonify({'error':'Job não encontrado.'}),404
-    return jsonify({'status':j['status'],'progress':j['progress'],'result':j['result'],'error':j['error']})
+    return jsonify({
+        'status':   j['status'],
+        'progress': j['progress'],
+        'result':   j['result'],
+        'partial':  j['partial'],
+        'error':    j['error']
+    })
 
 # ─── TESTES ───────────────────────────────────
 def run_tests():
@@ -1254,25 +1280,23 @@ function updateStreet(){
 function setGauge(id,pct){const el=document.getElementById(id);if(el)el.style.strokeDashoffset=CIRC-(pct/100)*CIRC;}
 
 // ── POLLING ──
-async function pollJob(jid, onProg, onDone, onErr){
+async function pollJob(jid, onProg, onDone, onErr, onPartial){
   let attempts = 0;
   const iv=setInterval(async()=>{
     attempts++;
-    // Timeout de segurança: 5 minutos máximo
     if(attempts > 1200){ clearInterval(iv); onErr('Tempo esgotado.'); return; }
     try{
       const r=await fetch('/status/'+jid);
-      // 404 = job não encontrado (servidor reiniciou ou job expirou)
       if(r.status===404){ clearInterval(iv); onErr('Servidor reiniciou. Tente calcular novamente.'); return; }
-      // 429 = rate limit
       if(r.status===429){ clearInterval(iv); onErr('Muitas requisições. Aguarde e tente novamente.'); return; }
       const j=await r.json();
       if(j.error && !j.status){ clearInterval(iv); onErr(j.error); return; }
       if(j.progress !== undefined) onProg(j.progress);
+      // Resultado parcial disponível — mostra imediatamente
+      if(j.partial && onPartial) onPartial(j.partial);
       if(j.status==='done'){ clearInterval(iv); onDone(j.result); }
       if(j.status==='error'){ clearInterval(iv); onErr(j.error||'Erro no cálculo.'); }
     }catch(e){
-      // Rede caiu momentaneamente — tenta de novo (não encerra)
       if(attempts > 20){ clearInterval(iv); onErr('Erro de conexão.'); }
     }
   },250);
@@ -1299,20 +1323,32 @@ async function doCalculate(){
     if(init.error){flash(init.error);setLoading('calc',false);hideProgress('calc');return;}
     pollJob(init.job_id,
       p=>setProgress('calc',p),
-      d=>{showCalcResults(d);setLoading('calc',false);setTimeout(()=>hideProgress('calc'),600);},
-      e=>{flash(e||'Erro.');setLoading('calc',false);hideProgress('calc');}
+      d=>{
+        showCalcResults(d, false);
+        setLoading('calc',false);
+        setTimeout(()=>hideProgress('calc'),600);
+      },
+      e=>{flash(e||'Erro.');setLoading('calc',false);hideProgress('calc');},
+      // Resultado parcial: mostra imediatamente com indicador ~
+      partial=>{ showCalcResults(partial, true); }
     );
   }catch{flash('Erro de conexão.');setLoading('calc',false);hideProgress('calc');}
 }
 
-function showCalcResults(d){
+function showCalcResults(d, isPartial){
   const{equity:eq,draws,hand_name,simulations,margin_of_error,beating_hands}=d;
-  // Save equity for EV import
-  lastCalcEquity = eq.win;
-  const hint = document.getElementById('import-hint');
-  if(hint){ hint.textContent=`Equity disponível: ${eq.win}% — clique "↑ DA CALC" para importar.`; hint.style.color='rgba(201,168,76,.6)'; }
-  document.getElementById('sim-counter').textContent=simulations.toLocaleString('pt-BR')+' simulações';
-  const mb=document.getElementById('moe-badge');mb.style.display='inline';mb.textContent='± '+margin_of_error+'%';
+  // Save equity for EV import (only on final result)
+  if(!isPartial){
+    lastCalcEquity = eq.win;
+    const hint = document.getElementById('import-hint');
+    if(hint){ hint.textContent=`Equity disponível: ${eq.win}% — clique "↑ DA CALC" para importar.`; hint.style.color='rgba(201,168,76,.6)'; }
+  }
+  const simLabel = isPartial ? `~${simulations.toLocaleString('pt-BR')} (estimativa)` : simulations.toLocaleString('pt-BR')+' simulações';
+  document.getElementById('sim-counter').textContent = simLabel;
+  const mb=document.getElementById('moe-badge');
+  mb.style.display='inline';
+  mb.textContent = isPartial ? '~ estimativa' : '± '+margin_of_error+'%';
+  mb.style.color  = isPartial ? 'rgba(255,200,80,.6)' : 'var(--gold-dim)';
   setGauge('gc-win',eq.win);setGauge('gc-tie',eq.tie);setGauge('gc-lose',eq.lose);
   document.getElementById('win-pct').textContent=eq.win+'%';
   document.getElementById('tie-pct').textContent=eq.tie+'%';
