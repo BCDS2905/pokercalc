@@ -331,7 +331,7 @@ def _run_calc(jid, hole, board, opp, sims):
         st ={0:'Pré-Flop',3:'Flop',4:'Turn',5:'River'}.get(len(board),'Flop')
 
         # ── Fase 1: resultado rápido com 500 sims ──
-        QUICK = 500
+        QUICK = min(500, sims//10) if sims <= 5000 else sims//10
         if sims > QUICK:
             eq_quick = monte_carlo(hole,board,opp,QUICK)
             moe_quick = round(100/(QUICK**0.5),2)
@@ -859,7 +859,7 @@ input.ev-input:focus{border-color:var(--gold);}
         </div>
         <div class="flex-1">
           <label class="text-xs" style="color:var(--gold-dim)">Simulações</label>
-          <select id="simulations" class="w-full mt-1"><option value="5000" selected>5.000</option><option value="10000">10.000</option></select>
+          <select id="simulations" class="w-full mt-1"><option value="2000">2.000</option><option value="5000" selected>5.000</option><option value="10000">10.000</option><option value="20000">20.000</option><option value="50000">50.000</option></select>
         </div>
       </div>
       <!-- Botão CALCULAR ODDS grande -->
@@ -971,7 +971,7 @@ input.ev-input:focus{border-color:var(--gold);}
         <div class="flex gap-2 flex-wrap" id="cmp-board-slots"></div>
       </div>
       <div class="mb-4"><label class="text-xs" style="color:var(--gold-dim)">Simulações</label>
-        <select id="cmp-sims" class="w-full mt-1"><option value="5000" selected>5.000</option><option value="10000">10.000</option></select></div>
+        <select id="cmp-sims" class="w-full mt-1"><option value="2000">2.000</option><option value="5000" selected>5.000</option><option value="10000">10.000</option><option value="20000">20.000</option><option value="50000">50.000</option></select></div>
       <div class="flex gap-3">
         <button class="btn-calc flex-1 flex items-center justify-center gap-2" id="cmp-btn" onclick="runCompare()">
           <span id="cmp-txt">CALCULAR CONFRONTO</span><div class="loader" id="cmp-loader"></div>
