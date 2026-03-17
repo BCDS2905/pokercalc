@@ -10,14 +10,17 @@ from collections import Counter, defaultdict
 from flask import Flask, request, jsonify, Response, redirect
 
 # ─── Tenta carregar avaliador C++ (20x mais rápido) ──────
+_APP_DIR = os.path.dirname(os.path.abspath(__file__))
+if _APP_DIR not in sys.path:
+    sys.path.insert(0, _APP_DIR)
+
 try:
     import evaluator as _cpp
     _USE_CPP = True
     print("  ♠  Modo turbo: C++ carregado com sucesso!")
 except ImportError:
     _USE_CPP = False
-    print("  ⚠  evaluator.so não encontrado — usando Python puro")
-    print("     Execute: bash build.sh  para compilar o C++")
+    print(f"  ⚠  evaluator.so não encontrado em {_APP_DIR} — usando Python puro")
 
 app = Flask(__name__)
 
