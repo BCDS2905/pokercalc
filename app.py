@@ -1663,9 +1663,10 @@ function hideProgress(prefix){
 async function doCalculate(){
   const h=hole.filter(Boolean);if(h.length<2){flash('Selecione as 2 cartas da mão.');return;}
   const b=board.filter(Boolean);setLoading('calc',true);setProgress('calc',0);
+  const sims = 20000;
   try{
     const res=await fetch('/calculate',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({hole_cards:h,board:b,opponents:+document.getElementById('opponents').value,simulations:+document.getElementById('simulations').value})});
+      body:JSON.stringify({hole_cards:h,board:b,opponents:+document.getElementById('opponents').value,simulations:sims})});
     const init=await res.json();
     if(init.error){flash(init.error);setLoading('calc',false);hideProgress('calc');return;}
     pollJob(init.job_id,
@@ -1685,7 +1686,7 @@ async function doCalculate(){
 function showCalcResults(d, isPartial){
   const{equity:eq,draws,hand_name,simulations,margin_of_error,beating_hands}=d;
   // Atualiza mesa com equity
-  renderCalcTable(eq.win);
+  try{ renderCalcTable(eq.win); }catch(e){ console.warn('renderCalcTable:', e); }
   // Save equity for EV import (only on final result)
   if(!isPartial){
     lastCalcEquity = eq.win;
