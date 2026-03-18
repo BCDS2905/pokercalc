@@ -248,10 +248,15 @@ def label_board(hole, board):
 
 # ─── MONTE CARLO (C++ ou Python) ──────────────
 def monte_carlo(hole, board, opponents=1, n=10000, cb=None):
+    global _USE_CPP
     if _USE_CPP:
-        res = _cpp.monte_carlo(hole, board, opponents, n)
-        if cb: cb(90)
-        return {'win': res[0], 'tie': res[1], 'lose': res[2]}
+        try:
+            res = _cpp.monte_carlo(hole, board, opponents, n)
+            if cb: cb(90)
+            return {'win': res[0], 'tie': res[1], 'lose': res[2]}
+        except Exception as e:
+            print(f"  ⚠  C++ erro: {e} — caindo para Python")
+            _USE_CPP = False
     # Fallback Python
     base   = [CARD_INT[c] for c in FULL_DECK if c not in hole+board]
     hole_i = [CARD_INT[c] for c in hole]
@@ -305,12 +310,17 @@ def get_draws(hole, board):
     return res
 
 def monte_carlo_multi(hands, board=[], n=10000, cb=None):
+    global _USE_CPP
     used=[c for h in hands for c in h]+list(board)
     if len(used)!=len(set(used)): raise ValueError("Cartas duplicadas.")
     if _USE_CPP:
-        res = _cpp.monte_carlo_multi(hands, list(board), n)
-        if cb: cb(100)
-        return [{'win':r[0],'tie':r[1],'lose':r[2]} for r in res]
+        try:
+            res = _cpp.monte_carlo_multi(hands, list(board), n)
+            if cb: cb(100)
+            return [{'win':r[0],'tie':r[1],'lose':r[2]} for r in res]
+        except Exception as e:
+            print(f"  ⚠  C++ erro multi: {e} — caindo para Python")
+            _USE_CPP = False
     # Fallback Python
     base_i =[CARD_INT[c] for c in FULL_DECK if c not in used]
     hands_i=[[CARD_INT[c] for c in h] for h in hands]
