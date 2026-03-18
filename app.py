@@ -2355,6 +2355,12 @@ document.addEventListener('touchstart', e=>{
     });
   }
 },{passive:false});
+// Fecha tooltips ao rolar no mobile
+document.addEventListener('touchmove', ()=>{
+  document.querySelectorAll('.tip-box.touch-open').forEach(b=>{
+    b.style.display='none'; b.classList.remove('touch-open');
+  });
+},{passive:true});
 </script>
 </body>
 </html>"""
