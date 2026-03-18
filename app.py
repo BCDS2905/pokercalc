@@ -1544,9 +1544,12 @@ function renderCalcTable(winPct){
     canvas.appendChild(el);
   }
 
-  // Oponentes com cartas viradas — distribuídos em arco no topo
+  // Oponentes com cartas viradas
+  // Mesmo sistema de ângulos do Confronto: 270=topo, 90=fundo(herói)
+  // Herói fica em 90° (fundo), oponentes ficam no restante
   const nOpp=parseInt(document.getElementById('opponents')?.value||1);
-  const oppAngles=[90,45,135,0,180,30,150].slice(0,nOpp);
+  const allOppAngles=[270,225,315,180,0,135,45]; // topo e lados, nunca fundo
+  const oppAngles=allOppAngles.slice(0,nOpp);
   const RX=W*0.41,RY=H*0.375;
   oppAngles.forEach((deg,i)=>{
     const rad=deg*Math.PI/180;
@@ -1560,16 +1563,11 @@ function renderCalcTable(winPct){
     cRow.style.cssText='display:flex;gap:3px;';
     for(let ci=0;ci<2;ci++){
       const card=document.createElement('div');
+      // Carta virada simples — fundo azul escuro sem detalhes
       card.style.cssText=`width:${ocw}px;height:${och}px;border-radius:${ocw*0.13}px;
-        background:linear-gradient(135deg,#1a3a6a 0%,#0d2040 100%);
-        border:1px solid rgba(100,140,200,.3);
-        box-shadow:0 2px 6px rgba(0,0,0,.6);
-        display:flex;align-items:center;justify-content:center;`;
-      // Padrão no verso
-      card.innerHTML=`<svg width="${ocw*0.7}" height="${och*0.6}" viewBox="0 0 20 28" fill="none">
-        <rect x="2" y="2" width="16" height="24" rx="2" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="1"/>
-        <text x="10" y="17" text-anchor="middle" font-size="10" fill="rgba(255,255,255,.15)">♠</text>
-      </svg>`;
+        background:#0d2040;
+        border:1px solid rgba(80,120,180,.25);
+        box-shadow:0 2px 6px rgba(0,0,0,.6);`;
       cRow.appendChild(card);
     }
     seat.appendChild(cRow);
@@ -2017,7 +2015,7 @@ function cmpPick(c){
 async function runCompare(){
   const hands=cmpHands.slice(0,cmpN);
   for(let i=0;i<hands.length;i++){if(!hands[i][0]||!hands[i][1]){flash(`Jogador ${i+1} está incompleto.`);return;}}
-  const sims=+document.getElementById('cmp-sims').value;
+  const sims = 20000;
   const board=cmpBoard.filter(Boolean);
   setLoading('cmp',true);setProgress('cmp',0);
   try{
