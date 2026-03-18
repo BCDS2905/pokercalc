@@ -995,16 +995,11 @@ input.ev-input:focus{border-color:var(--gold);}
     </div>
     <!-- Opções + Botão juntos -->
     <div class="glass p-4">
-      <!-- Oponentes e Simulações em linha compacta -->
-      <div class="flex gap-3 mb-3">
-        <div class="flex-1">
-          <label class="text-xs" style="color:var(--gold-dim)">Oponentes</label>
-          <select id="opponents" class="w-full mt-1"><option value="1">1 oponente</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option></select>
-        </div>
-        <div class="flex-1">
-          <label class="text-xs" style="color:var(--gold-dim)">Simulações</label>
-          <input type="hidden" id="simulations" value="20000"/><span class="text-xs font-mono" style="color:var(--gold-dim)">20.000 simulações</span>
-        </div>
+      <input type="hidden" id="simulations" value="20000"/>
+      <!-- Só oponentes -->
+      <div class="mb-3">
+        <label class="text-xs" style="color:var(--gold-dim)">Oponentes</label>
+        <select id="opponents" class="w-full mt-1"><option value="1">1 oponente</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option></select>
       </div>
       <!-- Botão CALCULAR ODDS grande -->
       <button class="btn-calc w-full flex items-center justify-center gap-3" id="calc-btn" onclick="doCalculate()"
