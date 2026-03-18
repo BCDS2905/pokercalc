@@ -1662,7 +1662,12 @@ function hideProgress(prefix){
 // ── CALCULATE ──
 async function doCalculate(){
   const h=hole.filter(Boolean);if(h.length<2){flash('Selecione as 2 cartas da mão.');return;}
-  const b=board.filter(Boolean);setLoading('calc',true);setProgress('calc',0);
+  const b=board.filter(Boolean);
+  if(![0,3,4,5].includes(b.length)){
+    flash('Board incompleto: adicione 0, 3, 4 ou 5 cartas.');
+    return;
+  }
+  setLoading('calc',true);setProgress('calc',0);
   const sims = 20000;
   try{
     const res=await fetch('/calculate',{method:'POST',headers:{'Content-Type':'application/json'},
@@ -1680,7 +1685,7 @@ async function doCalculate(){
       // Resultado parcial: mostra imediatamente com indicador ~
       partial=>{ showCalcResults(partial, true); }
     );
-  }catch{flash('Erro de conexão.');setLoading('calc',false);hideProgress('calc');}
+  }catch(e){flash('Erro de conexão com o servidor.');setLoading('calc',false);hideProgress('calc');}
 }
 
 function showCalcResults(d, isPartial){
