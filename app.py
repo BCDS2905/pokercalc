@@ -732,6 +732,7 @@ select{background:rgba(13,35,24,.9);border:1px solid rgba(201,168,76,.25);color:
 input[type=number]::-webkit-inner-spin-button{opacity:0.4;}
 input[type=number]{-moz-appearance:textfield;}
 input.ev-input{width:100%;padding:10px 40px 10px 14px;border-radius:10px;font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;background:rgba(13,35,24,.9);border:1px solid rgba(201,168,76,.25);color:var(--cream);outline:none;transition:border-color .15s;}
+input.ev-input.ev-input-lg{font-size:22px;padding:13px 48px 13px 16px;}
 input.ev-input:focus{border-color:var(--gold);}
 .math-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);font-family:'JetBrains Mono',monospace;font-size:12px;}
 .math-row:last-child{border-bottom:none;}
@@ -1186,38 +1187,46 @@ input.ev-input:focus{border-color:var(--gold);}
 <div id="mode-ev" style="display:none">
 <div class="flex gap-4 cols">
 
-  <!-- ESQUERDA: inputs compactos -->
-  <div class="flex flex-col gap-3 left-col" style="width:360px;flex-shrink:0">
+  <!-- ESQUERDA: inputs -->
+  <div class="flex flex-col gap-3 left-col" style="width:380px;flex-shrink:0">
 
-    <!-- Painel de inputs unificado -->
-    <div class="glass p-5">
-      <div class="flex items-center justify-between mb-5">
-        <p class="stitle">Situação</p>
-        <span class="text-xs font-mono" style="color:rgba(255,255,255,.2);letter-spacing:.06em">big blinds</span>
-      </div>
+    <!-- Painel de inputs -->
+    <div class="glass p-6">
+      <p class="stitle mb-5">Situação na Mesa</p>
 
       <!-- Pot -->
-      <div class="mb-4">
+      <div class="mb-5">
         <label class="text-xs mb-2 block" style="color:rgba(255,255,255,.4);letter-spacing:.12em">TAMANHO DO POT</label>
         <div class="ev-field-wrap">
-          <input id="ev-pot" type="number" class="ev-input" min="1" step="1" value="10" oninput="calcEV(); if(activeBetMult!==null)setBetPreset(activeBetMult)"/>
-          <span class="ev-field-unit">BB</span>
+          <input id="ev-pot" type="number" class="ev-input ev-input-lg" min="1" step="1" value="10"
+            oninput="calcEV(); if(activeBetMult!==null)setBetPreset(activeBetMult)"/>
+          <span class="ev-field-unit" style="font-size:14px">BB</span>
         </div>
       </div>
 
-      <!-- Aposta: botões preset + campo -->
-      <div class="mb-4">
-        <label class="text-xs mb-2 block" style="color:rgba(255,255,255,.4);letter-spacing:.12em">APOSTA DO OPONENTE</label>
-        <div class="grid grid-cols-5 gap-1.5 mb-2" id="ev-bet-btns">
-          <button class="ev-bet-btn" data-mult="0.25" onclick="setBetPreset(0.25)">¼</button>
-          <button class="ev-bet-btn" data-mult="0.5"  onclick="setBetPreset(0.5)">½</button>
-          <button class="ev-bet-btn active-bet" data-mult="0.66" onclick="setBetPreset(0.66)">⅔</button>
-          <button class="ev-bet-btn" data-mult="1"    onclick="setBetPreset(1)">1×</button>
-          <button class="ev-bet-btn" data-mult="2"    onclick="setBetPreset(2)">AI</button>
+      <!-- Aposta -->
+      <div class="mb-5">
+        <label class="text-xs mb-3 block" style="color:rgba(255,255,255,.4);letter-spacing:.12em">APOSTA DO OPONENTE</label>
+        <div class="grid grid-cols-5 gap-2 mb-3" id="ev-bet-btns">
+          <button class="ev-bet-btn ev-bet-btn-lg" data-mult="0.25" onclick="setBetPreset(0.25)">
+            <span style="font-size:14px">¼</span><span style="font-size:9px;opacity:.6;display:block">pot</span>
+          </button>
+          <button class="ev-bet-btn ev-bet-btn-lg" data-mult="0.5" onclick="setBetPreset(0.5)">
+            <span style="font-size:14px">½</span><span style="font-size:9px;opacity:.6;display:block">pot</span>
+          </button>
+          <button class="ev-bet-btn ev-bet-btn-lg active-bet" data-mult="0.66" onclick="setBetPreset(0.66)">
+            <span style="font-size:14px">⅔</span><span style="font-size:9px;opacity:.6;display:block">pot</span>
+          </button>
+          <button class="ev-bet-btn ev-bet-btn-lg" data-mult="1" onclick="setBetPreset(1)">
+            <span style="font-size:14px">1×</span><span style="font-size:9px;opacity:.6;display:block">pot</span>
+          </button>
+          <button class="ev-bet-btn ev-bet-btn-lg" data-mult="2" onclick="setBetPreset(2)">
+            <span style="font-size:14px">AI</span><span style="font-size:9px;opacity:.6;display:block">all-in</span>
+          </button>
         </div>
         <div class="ev-field-wrap">
-          <input id="ev-bet" type="number" class="ev-input" min="0" step="0.5" value="6.6" oninput="onBetManual()"/>
-          <span class="ev-field-unit">BB</span>
+          <input id="ev-bet" type="number" class="ev-input ev-input-lg" min="0" step="0.5" value="6.6" oninput="onBetManual()"/>
+          <span class="ev-field-unit" style="font-size:14px">BB</span>
         </div>
       </div>
 
@@ -1225,14 +1234,14 @@ input.ev-input:focus{border-color:var(--gold);}
       <div>
         <label class="text-xs mb-2 block" style="color:rgba(255,255,255,.4);letter-spacing:.12em">SUA CHANCE DE GANHAR</label>
         <div class="ev-field-wrap mb-3">
-          <input id="ev-equity" type="number" class="ev-input" min="1" max="99" step="0.5" value="35" oninput="calcEV()"/>
-          <span class="ev-field-unit">%</span>
+          <input id="ev-equity" type="number" class="ev-input ev-input-lg" min="1" max="99" step="0.5" value="35" oninput="calcEV()"/>
+          <span class="ev-field-unit" style="font-size:14px">%</span>
         </div>
         <button onclick="importEquity()" id="import-btn"
-          style="width:100%;padding:10px;border-radius:8px;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:12px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;border:1.5px solid rgba(201,168,76,.4);background:rgba(201,168,76,.08);color:var(--gold);transition:all .2s;display:flex;align-items:center;justify-content:center;gap:6px;"
+          style="width:100%;padding:12px;border-radius:10px;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:13px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;border:1.5px solid rgba(201,168,76,.4);background:rgba(201,168,76,.08);color:var(--gold);transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;"
           onmouseover="this.style.background='rgba(201,168,76,.18)';this.style.boxShadow='var(--glow-gold)'"
           onmouseout="this.style.background='rgba(201,168,76,.08)';this.style.boxShadow='none'">
-          <span>↑</span> IMPORTAR DA CALCULADORA
+          <span style="font-size:16px">↑</span> IMPORTAR DA CALCULADORA
         </button>
         <p id="import-hint" class="text-xs mt-2" style="color:rgba(255,255,255,.25);line-height:1.5">
           Use a aba <strong style="color:rgba(201,168,76,.5)">Calculadora</strong> para obter sua equity.
@@ -1240,17 +1249,32 @@ input.ev-input:focus{border-color:var(--gold);}
       </div>
     </div>
 
-    <!-- Resumo do pot (mini visual) -->
-    <div class="glass p-4" id="ev-pot-summary">
-      <div class="flex justify-between text-xs font-mono mb-3" style="color:rgba(255,255,255,.35)">
-        <span>Pot atual</span><span>Total se chamar</span>
+    <!-- Composição do pot -->
+    <div class="glass p-5" id="ev-pot-summary">
+      <p class="stitle mb-4">Composição do Pot</p>
+      <!-- Barra proporcional -->
+      <div style="display:flex;height:32px;border-radius:8px;overflow:hidden;margin-bottom:12px;gap:2px">
+        <div id="ev-pot-fill" style="background:rgba(201,168,76,.35);border-radius:6px;transition:flex .4s ease;flex:10;display:flex;align-items:center;justify-content:center;">
+          <span id="ev-pot-pct" style="font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:var(--gold)">60%</span>
+        </div>
+        <div id="ev-bet-fill" style="background:rgba(231,76,60,.3);border-radius:6px;transition:flex .4s ease;flex:6.6;display:flex;align-items:center;justify-content:center;">
+          <span id="ev-bet-pct" style="font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:#e74c3c">40%</span>
+        </div>
       </div>
-      <div id="ev-pot-bar" style="height:8px;border-radius:4px;background:rgba(255,255,255,.06);overflow:hidden;margin-bottom:6px">
-        <div id="ev-pot-fill" style="height:100%;border-radius:4px;background:rgba(201,168,76,.4);width:60%;transition:width .4s ease"></div>
-      </div>
-      <div class="flex justify-between text-xs font-mono">
-        <span id="ev-pot-lbl" style="color:var(--gold)">10 BB</span>
-        <span id="ev-total-lbl" style="color:rgba(255,255,255,.5)">16.6 BB</span>
+      <!-- Labels -->
+      <div class="flex justify-between">
+        <div>
+          <div class="text-xs mb-1" style="color:rgba(255,255,255,.3)">Pot atual</div>
+          <div id="ev-pot-lbl" style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:var(--gold)">10 BB</div>
+        </div>
+        <div style="text-align:center">
+          <div class="text-xs mb-1" style="color:rgba(255,255,255,.3)">Aposta</div>
+          <div id="ev-bet-lbl" style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:#e74c3c">6.6 BB</div>
+        </div>
+        <div style="text-align:right">
+          <div class="text-xs mb-1" style="color:rgba(255,255,255,.3)">Total</div>
+          <div id="ev-total-lbl" style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:rgba(255,255,255,.7)">16.6 BB</div>
+        </div>
       </div>
     </div>
 
@@ -1260,31 +1284,47 @@ input.ev-input:focus{border-color:var(--gold);}
   <div class="flex-1 flex flex-col gap-3">
 
     <!-- Verdito grande -->
-    <div id="ev-verdict" class="verdict-box" style="flex:0 0 auto">
-      <div id="ev-icon" style="font-size:52px;margin-bottom:10px;line-height:1">🃏</div>
-      <div id="ev-title" style="font-family:'Rajdhani',sans-serif;font-size:30px;font-weight:700;letter-spacing:.12em;margin-bottom:8px">Preencha os campos</div>
-      <div id="ev-explain" style="font-size:14px;line-height:1.7;color:rgba(255,255,255,.5);max-width:380px;margin:0 auto"></div>
+    <div id="ev-verdict" class="verdict-box" style="padding:36px 28px">
+      <div id="ev-icon" style="font-size:64px;margin-bottom:14px;line-height:1">🃏</div>
+      <div id="ev-title" style="font-family:'Rajdhani',sans-serif;font-size:36px;font-weight:700;letter-spacing:.14em;margin-bottom:12px">Preencha os campos</div>
+      <div id="ev-explain" style="font-size:15px;line-height:1.8;color:rgba(255,255,255,.5);max-width:400px;margin:0 auto"></div>
+    </div>
+
+    <!-- 3 números-chave -->
+    <div class="grid grid-cols-3 gap-3" id="ev-stats-row" style="display:none!important">
+      <div class="glass p-4 text-center">
+        <div class="text-xs mb-2" style="color:rgba(255,255,255,.3);letter-spacing:.1em">POT ODDS</div>
+        <div id="ev-stat-odds" style="font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:700;color:var(--gold)">—</div>
+      </div>
+      <div class="glass p-4 text-center">
+        <div class="text-xs mb-2" style="color:rgba(255,255,255,.3);letter-spacing:.1em">MÍNIMO</div>
+        <div id="ev-stat-min" style="font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:700;color:#e8c96d">—</div>
+      </div>
+      <div class="glass p-4 text-center">
+        <div class="text-xs mb-2" style="color:rgba(255,255,255,.3);letter-spacing:.1em">EV DO CALL</div>
+        <div id="ev-stat-ev" style="font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:700">—</div>
+      </div>
     </div>
 
     <!-- Barra equity vs mínimo -->
-    <div class="glass p-4" id="ev-bar-panel" style="display:none">
-      <div class="flex justify-between items-center mb-3">
-        <span class="stitle">Equity vs Mínimo</span>
+    <div class="glass p-5" id="ev-bar-panel" style="display:none">
+      <div class="flex justify-between items-center mb-4">
+        <span class="stitle">Sua Equity vs Mínimo Necessário</span>
         <div id="ev-bar-summary" class="text-xs font-mono"></div>
       </div>
-      <div class="needs-bar" style="margin-bottom:20px">
-        <div class="needs-fill" id="ev-needs-fill"></div>
+      <div class="needs-bar" style="height:18px;margin-bottom:24px;border-radius:9px">
+        <div class="needs-fill" id="ev-needs-fill" style="border-radius:9px"></div>
         <div class="needs-marker" id="ev-needs-marker"></div>
         <div class="needs-marker-label" id="ev-needs-label"></div>
       </div>
       <div class="flex justify-between text-xs font-mono" style="color:rgba(255,255,255,.2)">
-        <span>0%</span><span>50%</span><span>100%</span>
+        <span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span>
       </div>
     </div>
 
     <!-- Cálculo matemático -->
-    <div class="glass p-4 flex-1" id="ev-math-wrap" style="display:none">
-      <p class="stitle mb-3">Cálculo</p>
+    <div class="glass p-5 flex-1" id="ev-math-wrap" style="display:none">
+      <p class="stitle mb-4">Cálculo Detalhado</p>
       <div id="ev-math-content"></div>
     </div>
 
@@ -1971,11 +2011,33 @@ function calcEV(){
 
   // ── Atualiza mini visual do pot ──
   const potFill = document.getElementById('ev-pot-fill');
+  const betFill = document.getElementById('ev-bet-fill');
   const potLbl  = document.getElementById('ev-pot-lbl');
+  const betLbl  = document.getElementById('ev-bet-lbl');
   const totLbl  = document.getElementById('ev-total-lbl');
-  if(potFill){ potFill.style.width = (pot/(pot+bet)*100).toFixed(1)+'%'; }
+  const potPct  = document.getElementById('ev-pot-pct');
+  const betPct  = document.getElementById('ev-bet-pct');
+  const total   = pot + bet;
+  if(potFill){ potFill.style.flex = pot; }
+  if(betFill){ betFill.style.flex = bet; }
+  if(potPct)  potPct.textContent  = (pot/total*100).toFixed(0)+'%';
+  if(betPct)  betPct.textContent  = (bet/total*100).toFixed(0)+'%';
   if(potLbl)  potLbl.textContent  = pot+' BB';
-  if(totLbl)  totLbl.textContent  = (pot+bet).toFixed(1)+' BB';
+  if(betLbl)  betLbl.textContent  = bet.toFixed(1)+' BB';
+  if(totLbl)  totLbl.textContent  = total.toFixed(1)+' BB';
+
+  // ── Stats row ──
+  const statsRow = document.getElementById('ev-stats-row');
+  if(statsRow){ statsRow.style.display='grid'; statsRow.style.removeProperty('display'); statsRow.style.display='grid'; }
+  const statOdds = document.getElementById('ev-stat-odds');
+  const statMin  = document.getElementById('ev-stat-min');
+  const statEV   = document.getElementById('ev-stat-ev');
+  if(statOdds) statOdds.textContent = (reqEq*100).toFixed(1)+'%';
+  if(statMin)  statMin.textContent  = (reqEq*100).toFixed(1)+'%';
+  if(statEV){
+    statEV.textContent = (ev>=0?'+':'')+ev.toFixed(2)+' BB';
+    statEV.style.color = ev>0.05?'#00d472':ev<-0.05?'#e74c3c':'var(--gold)';
+  }
 
   // ── Verdito ──
   const vBox    = document.getElementById('ev-verdict');
