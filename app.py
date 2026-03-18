@@ -1012,6 +1012,12 @@ input.ev-input:focus{border-color:var(--gold);}
     </div>
   </div>
   <div class="flex-1 flex flex-col gap-4">
+    <!-- MESA DA CALCULADORA -->
+    <div class="glass overflow-hidden">
+      <div class="poker-table-wrap">
+        <div class="poker-table-inner" id="calc-poker-table"></div>
+      </div>
+    </div>
     <div class="glass p-5">
       <div class="flex items-center justify-between mb-4">
         <div class="flex items-center gap-1">
@@ -1473,6 +1479,7 @@ function renderCalcSlots(){
       cont.appendChild(sl);
     });
   });
+  renderCalcTable();
 }
 function updateStreet(){
   const n=board.filter(Boolean).length;const cur={0:'pre',3:'flop',4:'turn',5:'river'}[n]||'pre';
@@ -1483,6 +1490,143 @@ function updateStreet(){
   });
 }
 function setGauge(id,pct){const el=document.getElementById(id);if(el)el.style.strokeDashoffset=CIRC-(pct/100)*CIRC;}
+
+
+// ── MESA DA CALCULADORA ──────────────────────────────────
+function renderCalcTable(winPct){
+  const canvas=document.getElementById('calc-poker-table');
+  if(!canvas)return;
+  const W=canvas.offsetWidth||600;
+  const H=canvas.offsetHeight||(W*0.58);
+  if(W<10)return;
+  canvas.innerHTML='';
+  const cx=W/2,cy=H/2;
+
+  // SVG feltro
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('width','100%');svg.setAttribute('height','100%');
+  svg.style.cssText='position:absolute;inset:0;pointer-events:none;';
+  svg.innerHTML=`<defs>
+    <filter id="cshadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="5" stdDeviation="12" flood-color="rgba(0,0,0,.8)"/>
+    </filter>
+    <radialGradient id="cfelt" cx="50%" cy="42%" r="62%">
+      <stop offset="0%" stop-color="#1e6b34"/>
+      <stop offset="65%" stop-color="#145228"/>
+      <stop offset="100%" stop-color="#0b3318"/>
+    </radialGradient>
+    <radialGradient id="cshine" cx="50%" cy="35%" r="55%">
+      <stop offset="0%" stop-color="rgba(255,255,255,.07)"/>
+      <stop offset="100%" stop-color="rgba(0,0,0,0)"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="${cx}" cy="${cy}" rx="${W*0.475}" ry="${H*0.452}" fill="#4a2e0a" filter="url(#cshadow)"/>
+  <ellipse cx="${cx}" cy="${cy}" rx="${W*0.438}" ry="${H*0.418}" fill="url(#cfelt)"/>
+  <ellipse cx="${cx}" cy="${cy*0.75}" rx="${W*0.31}" ry="${H*0.19}" fill="url(#cshine)"/>
+  <ellipse cx="${cx}" cy="${cy}" rx="${W*0.388}" ry="${H*0.362}" fill="none" stroke="rgba(201,168,76,.18)" stroke-width="1.5"/>
+  <text x="${cx}" y="${cy+6}" text-anchor="middle" font-family="Rajdhani,sans-serif" font-size="${W*0.022}" font-weight="700" fill="rgba(255,255,255,.05)" letter-spacing="0.18em">POKERCALC</text>`;
+  canvas.appendChild(svg);
+
+  const cw=Math.max(Math.min(W*0.06,42),22);
+  const ch=cw*1.42;
+  const gap=cw*0.2;
+
+  // Board no centro
+  const bStartX=cx-(5*cw+4*gap)/2;
+  const bY=cy-ch/2;
+  for(let i=0;i<5;i++){
+    const c=board[i];
+    const el=document.createElement('div');
+    el.className='t-card'+(c?(isRed(c.slice(-1))?' red':' black'):' empty');
+    el.style.cssText=`position:absolute;left:${bStartX+i*(cw+gap)}px;top:${bY}px;width:${cw}px;height:${ch}px;border-radius:${cw*0.13}px;`;
+    if(c){const{r,s}=lbl(c);el.innerHTML=`<span class="tr" style="font-size:${cw*0.37}px">${r}</span><span class="ts" style="font-size:${cw*0.37}px">${s}</span>`;}
+    else{el.innerHTML=`<span style="font-size:9px;color:rgba(255,255,255,.15)">·</span>`;}
+    canvas.appendChild(el);
+  }
+
+  // Oponentes com cartas viradas — distribuídos em arco no topo
+  const nOpp=parseInt(document.getElementById('opponents')?.value||1);
+  const oppAngles=[90,45,135,0,180,30,150].slice(0,nOpp);
+  const RX=W*0.41,RY=H*0.375;
+  oppAngles.forEach((deg,i)=>{
+    const rad=deg*Math.PI/180;
+    const sx=cx+RX*Math.cos(rad);
+    const sy=cy+RY*Math.sin(rad);
+    const ocw=Math.max(Math.min(W*0.044,30),16);
+    const och=ocw*1.42;
+    const seat=document.createElement('div');
+    seat.style.cssText=`position:absolute;left:${sx}px;top:${sy}px;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:3px;`;
+    const cRow=document.createElement('div');
+    cRow.style.cssText='display:flex;gap:3px;';
+    for(let ci=0;ci<2;ci++){
+      const card=document.createElement('div');
+      card.style.cssText=`width:${ocw}px;height:${och}px;border-radius:${ocw*0.13}px;
+        background:linear-gradient(135deg,#1a3a6a 0%,#0d2040 100%);
+        border:1px solid rgba(100,140,200,.3);
+        box-shadow:0 2px 6px rgba(0,0,0,.6);
+        display:flex;align-items:center;justify-content:center;`;
+      // Padrão no verso
+      card.innerHTML=`<svg width="${ocw*0.7}" height="${och*0.6}" viewBox="0 0 20 28" fill="none">
+        <rect x="2" y="2" width="16" height="24" rx="2" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="1"/>
+        <text x="10" y="17" text-anchor="middle" font-size="10" fill="rgba(255,255,255,.15)">♠</text>
+      </svg>`;
+      cRow.appendChild(card);
+    }
+    seat.appendChild(cRow);
+    const lbl3=document.createElement('span');
+    lbl3.style.cssText=`font-family:'Rajdhani',sans-serif;font-weight:700;font-size:${Math.max(W*0.013,8)}px;color:rgba(255,255,255,.25);letter-spacing:.06em;`;
+    lbl3.textContent=`J${i+1}`;
+    seat.appendChild(lbl3);
+    canvas.appendChild(seat);
+  });
+
+  // Herói (posição de baixo)
+  const heroY=cy+RY*0.95;
+  const hcw=Math.max(Math.min(W*0.058,40),22);
+  const hch=hcw*1.42;
+  const hero=document.createElement('div');
+  hero.style.cssText=`position:absolute;left:${cx}px;top:${heroY}px;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:4px;`;
+
+  // Cartas do herói
+  const hRow=document.createElement('div');
+  hRow.style.cssText='display:flex;gap:4px;';
+  for(let ci=0;ci<2;ci++){
+    const c=hole[ci];
+    const cardEl=document.createElement('div');
+    cardEl.className='t-card'+(c?(isRed(c.slice(-1))?' red':' black'):' empty');
+    cardEl.style.cssText=`position:relative;width:${hcw}px;height:${hch}px;border-radius:${hcw*0.13}px;`;
+    if(c){
+      const{r,s}=lbl(c);
+      cardEl.innerHTML=`<span class="tr" style="font-size:${hcw*0.37}px">${r}</span><span class="ts" style="font-size:${hcw*0.37}px">${s}</span>`;
+      if(winPct!==undefined){
+        const glow=winPct>=50?'rgba(0,212,114,.6)':winPct>=35?'rgba(201,168,76,.6)':'rgba(231,76,60,.4)';
+        cardEl.style.boxShadow=`0 0 14px 3px ${glow},0 3px 8px rgba(0,0,0,.5)`;
+      }
+    } else {
+      cardEl.innerHTML=`<span style="font-size:9px;color:rgba(255,255,255,.2)">?</span>`;
+    }
+    hRow.appendChild(cardEl);
+  }
+  hero.appendChild(hRow);
+
+  // Badge de equity
+  if(winPct!==undefined){
+    const winColor=winPct>=60?'#00d472':winPct>=40?'#e8c96d':'#e74c3c';
+    const badge=document.createElement('div');
+    badge.style.cssText=`padding:3px 12px;border-radius:12px;
+      font-family:'JetBrains Mono',monospace;font-weight:700;font-size:${Math.max(W*0.024,13)}px;
+      background:rgba(0,0,0,.65);border:2px solid ${winColor};color:${winColor};
+      white-space:nowrap;box-shadow:0 0 12px ${winColor}55;letter-spacing:.04em;`;
+    badge.textContent=winPct+'%';
+    hero.appendChild(badge);
+  }
+
+  const youLbl=document.createElement('span');
+  youLbl.style.cssText=`font-family:'Rajdhani',sans-serif;font-weight:700;font-size:${Math.max(W*0.016,9)}px;color:rgba(255,255,255,.35);letter-spacing:.1em;`;
+  youLbl.textContent='VOCÊ';
+  hero.appendChild(youLbl);
+  canvas.appendChild(hero);
+}
 
 // ── POLLING ──
 async function pollJob(jid, onProg, onDone, onErr, onPartial){
@@ -1542,6 +1686,8 @@ async function doCalculate(){
 
 function showCalcResults(d, isPartial){
   const{equity:eq,draws,hand_name,simulations,margin_of_error,beating_hands}=d;
+  // Atualiza mesa com equity
+  renderCalcTable(eq.win);
   // Save equity for EV import (only on final result)
   if(!isPartial){
     lastCalcEquity = eq.win;
@@ -2173,12 +2319,19 @@ buildQuickHands();
 renderPlayers();renderCmpBoardSlots();buildCmpDeck();updateCmpStreet();
 calcEV();
 
-// Redesenha mesa quando janela redimensiona
+// Redesenha mesas quando janela redimensiona
 const pokerCanvas = document.getElementById('poker-table-canvas');
 if(pokerCanvas && window.ResizeObserver){
   new ResizeObserver(()=>renderPokerTable()).observe(pokerCanvas);
 }
-window.addEventListener('resize', ()=>{ if(mode==='compare') renderPokerTable(); });
+const calcCanvas = document.getElementById('calc-poker-table');
+if(calcCanvas && window.ResizeObserver){
+  new ResizeObserver(()=>renderCalcTable()).observe(calcCanvas);
+}
+window.addEventListener('resize', ()=>{
+  if(mode==='compare') renderPokerTable();
+  if(mode==='calc') renderCalcTable();
+});
 
 // ── Touch: tooltips ──
 // No mobile (sem hover), toque no ícone ? abre/fecha o tooltip
