@@ -1743,11 +1743,16 @@ function renderPokerTable(results){
 
     const seat=document.createElement('div');
     seat.className='t-seat';
-    seat.style.cssText=`left:${sx}px;top:${sy}px;transform:translate(-50%,-50%);flex-direction:${isTop?'column-reverse':'column'};`;
+    seat.style.cssText=`left:${sx}px;top:${sy}px;transform:translate(-50%,-50%);flex-direction:${isTop?'column-reverse':'column'};gap:4px;`;
 
     // Cartas
     const scw=Math.max(Math.min(W*0.052,36),18);
     const sch=scw*1.42;
+
+    // Wrapper das cartas + badge de probabilidade
+    const cardWrap=document.createElement('div');
+    cardWrap.style.cssText='position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;';
+
     const cRow=document.createElement('div');
     cRow.className='t-seat-cards';
     for(let ci=0;ci<2;ci++){
@@ -1758,31 +1763,41 @@ function renderPokerTable(results){
       if(c){
         const{r,s}=lbl(c);
         cardEl.innerHTML=`<span class="tr" style="font-size:${scw*0.36}px">${r}</span><span class="ts" style="font-size:${scw*0.36}px">${s}</span>`;
-        if(isWinner)cardEl.style.boxShadow=`0 0 10px 2px ${col},0 3px 8px rgba(0,0,0,.5)`;
+        if(isWinner) cardEl.style.boxShadow=`0 0 12px 3px ${col},0 3px 8px rgba(0,0,0,.5)`;
       } else {
         cardEl.innerHTML=`<span style="font-size:9px;color:rgba(255,255,255,.18)">?</span>`;
       }
       cRow.appendChild(cardEl);
     }
-    seat.appendChild(cRow);
+    cardWrap.appendChild(cRow);
 
-    // Label
-    const info=document.createElement('div');
-    info.style.cssText='display:flex;flex-direction:column;align-items:center;gap:0;';
+    // Badge de probabilidade (aparece só depois do cálculo)
+    if(eq){
+      const badge=document.createElement('div');
+      const badgeFs=Math.max(Math.min(W*0.018,13),9);
+      badge.style.cssText=`
+        padding:2px 6px;border-radius:10px;
+        font-family:'JetBrains Mono',monospace;font-weight:700;font-size:${badgeFs}px;
+        background:${isWinner?'rgba(0,212,114,.25)':'rgba(13,35,24,.85)'};
+        border:1px solid ${isWinner?'rgba(0,212,114,.6)':col+'66'};
+        color:${isWinner?'#00d472':col};
+        white-space:nowrap;
+        box-shadow:${isWinner?'0 0 8px rgba(0,212,114,.3)':'none'};
+        transition:all .3s;
+      `;
+      badge.textContent=eq.win+'%';
+      cardWrap.appendChild(badge);
+    }
+    seat.appendChild(cardWrap);
+
+    // Nome do jogador
     const nm=document.createElement('span');
     nm.className='t-seat-name';
     nm.style.color=col;
+    nm.style.fontSize=Math.max(Math.min(W*0.016,11),8)+'px';
     nm.textContent=`J${i+1}`;
-    info.appendChild(nm);
-    if(eq){
-      const eql=document.createElement('span');
-      eql.className='t-seat-eq';
-      eql.style.color=isWinner?'#00d472':col;
-      eql.style.fontSize=Math.max(Math.min(W*0.022,14),9)+'px';
-      eql.textContent=eq.win+'%';
-      info.appendChild(eql);
-    }
-    seat.appendChild(info);
+    seat.appendChild(nm);
+
     canvas.appendChild(seat);
   });
 }
