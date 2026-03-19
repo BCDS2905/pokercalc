@@ -377,7 +377,7 @@ def _run_calc(jid, hole, board, opp, sims):
         eq   = monte_carlo(hole,board,opp,sims,cb=cb)
         moe  = round(100/(sims**0.5),2)
         job_prog(jid, 95)
-        beating = get_beating_hands(hole,board) if eq['win']>=50 and board else None
+        beating = get_beating_hands(hole,board) if board else None
         r = {'equity':eq,'draws':drw,'hand_name':nm,'street':st,
              'simulations':sims,'margin_of_error':moe,'beating_hands':beating,'partial':False}
         cache_set(k,r); job_done(jid,r)
@@ -735,22 +735,30 @@ input.ev-input:focus{border-color:var(--gold);}
 .math-row:last-child{border-bottom:none;}
 /* ── Desktop: tudo na tela sem scroll ── */
 @media(min-width:601px){
-  #mode-calc>.cols{
+  #mode-ev{
     height:calc(100vh - 80px);
-    align-items:stretch;
+    flex-direction:column;
+    overflow:hidden;
   }
-  #mode-calc>.cols>.left-col{
+  #mode-ev[style*="block"]{
+    display:flex!important;
+  }
+  #mode-ev>.flex.gap-4.cols{
+    flex:1;
+    overflow:hidden;
+    min-height:0;
+  }
+  #mode-ev .left-col{
     overflow-y:auto;
-    overflow-x:hidden;
     scrollbar-width:thin;
     scrollbar-color:rgba(201,168,76,.2) transparent;
   }
-  #mode-calc>.cols>.flex-1{
+  #mode-ev .flex-1.flex.flex-col.gap-3{
     overflow-y:auto;
-    overflow-x:hidden;
     scrollbar-width:thin;
     scrollbar-color:rgba(201,168,76,.2) transparent;
   }
+
 }
 /* ── Splash Screen ── */
 #splash{
@@ -904,7 +912,8 @@ input.ev-input:focus{border-color:var(--gold);}
   font-family:'Rajdhani',sans-serif;font-weight:700;font-size:20px;
   width:26px;flex-shrink:0;display:flex;align-items:center;
 }
-.poker-table-wrap{position:relative;width:100%;padding-bottom:46%;min-height:160px;}
+.poker-table-wrap{position:relative;width:100%;padding-bottom:32%;min-height:120px;}
+#cmp-table-panel .poker-table-wrap{padding-bottom:50%;min-height:200px;}
 .poker-table-inner{position:absolute;inset:0;}
 .t-card{position:absolute;background:var(--card-bg);border-radius:5px;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(0,0,0,.65),inset 0 1px 0 rgba(255,255,255,.85);transition:transform .2s,opacity .2s;}
 .t-card .tr{font-family:'Rajdhani',sans-serif;font-weight:700;line-height:1;}
@@ -995,7 +1004,7 @@ input.ev-input:focus{border-color:var(--gold);}
       </div>
       <div class="flex gap-2 flex-wrap" id="board-slots"></div>
     </div>
-    <div class="glass p-4 flex-1">
+    <div class="glass p-4">
       <div class="flex items-center justify-between mb-3">
         <p class="stitle">Deck</p>
         <div class="flex gap-1">
@@ -1144,7 +1153,7 @@ input.ev-input:focus{border-color:var(--gold);}
       </div>
       <div class="progress-wrap" id="cmp-prog-wrap" style="display:none"><div class="progress-fill" id="cmp-prog-fill"></div></div>
     </div>
-    <div class="glass p-4 flex-1">
+    <div class="glass p-4">
       <div class="flex items-center justify-between mb-3">
         <p class="stitle">Deck</p>
         <div class="flex gap-1">
@@ -1193,25 +1202,20 @@ input.ev-input:focus{border-color:var(--gold);}
 <!-- VALE A PENA? -->
 <div id="mode-ev" style="display:none">
 
-<!-- Mesa do Vale a Pena? -->
-<div class="glass overflow-hidden mb-4">
-  <div class="poker-table-wrap">
-    <div class="poker-table-inner" id="ev-poker-table"></div>
-  </div>
-</div>
+
 
 <div class="flex gap-4 cols">
 
   <!-- ESQUERDA: inputs -->
-  <div class="flex flex-col gap-3 left-col" style="width:380px;flex-shrink:0">
+  <div class="flex flex-col gap-3 left-col" style="width:340px;flex-shrink:0">
 
     <!-- Painel de inputs -->
-    <div class="glass p-6">
-      <p class="stitle mb-5">Situação na Mesa</p>
+    <div class="glass p-4">
+      <p class="stitle mb-3">Situação na Mesa</p>
 
       <!-- Pot -->
-      <div class="mb-5">
-        <label class="text-xs mb-2 block" style="color:rgba(255,255,255,.4);letter-spacing:.12em">TAMANHO DO POT</label>
+      <div class="mb-3">
+        <label class="text-xs mb-1 block" style="color:rgba(255,255,255,.4);letter-spacing:.12em">TAMANHO DO POT</label>
         <div class="ev-field-wrap">
           <input id="ev-pot" type="number" class="ev-input ev-input-lg" min="1" step="1" value="10"
             oninput="calcEV(); if(activeBetMult!==null)setBetPreset(activeBetMult)"/>
@@ -1220,8 +1224,8 @@ input.ev-input:focus{border-color:var(--gold);}
       </div>
 
       <!-- Aposta -->
-      <div class="mb-5">
-        <label class="text-xs mb-3 block" style="color:rgba(255,255,255,.4);letter-spacing:.12em">APOSTA DO OPONENTE</label>
+      <div class="mb-3">
+        <label class="text-xs mb-2 block" style="color:rgba(255,255,255,.4);letter-spacing:.12em">APOSTA DO OPONENTE</label>
         <div class="grid grid-cols-5 gap-2 mb-3" id="ev-bet-btns">
           <button class="ev-bet-btn ev-bet-btn-lg" data-mult="0.25" onclick="setBetPreset(0.25)">
             <span style="font-size:14px">¼</span><span style="font-size:9px;opacity:.6;display:block">pot</span>
@@ -1299,9 +1303,9 @@ input.ev-input:focus{border-color:var(--gold);}
   <div class="flex-1 flex flex-col gap-3">
 
     <!-- Verdito grande -->
-    <div id="ev-verdict" class="verdict-box" style="padding:36px 28px">
-      <div id="ev-icon" style="font-size:64px;margin-bottom:14px;line-height:1">🃏</div>
-      <div id="ev-title" style="font-family:'Rajdhani',sans-serif;font-size:36px;font-weight:700;letter-spacing:.14em;margin-bottom:12px">Preencha os campos</div>
+    <div id="ev-verdict" class="verdict-box" style="padding:20px 20px">
+      <div id="ev-icon" style="font-size:48px;margin-bottom:8px;line-height:1">🃏</div>
+      <div id="ev-title" style="font-family:'Rajdhani',sans-serif;font-size:30px;font-weight:700;letter-spacing:.14em;margin-bottom:8px">Preencha os campos</div>
       <div id="ev-explain" style="font-size:15px;line-height:1.8;color:rgba(255,255,255,.5);max-width:400px;margin:0 auto"></div>
     </div>
 
@@ -1525,105 +1529,48 @@ function setGauge(id,pct){const el=document.getElementById(id);if(el)el.style.st
 
 
 
-// ── MESA DO VALE A PENA? ─────────────────────────────────
+// ── CARTAS DO VALE A PENA? ──────────────────────────────
 function renderEvTable(){
-  const canvas = document.getElementById('ev-poker-table');
-  if(!canvas) return;
-  const W = canvas.offsetWidth || 600;
-  const H = canvas.offsetHeight || (W * 0.48);
-  if(W < 10) return;
-  canvas.innerHTML = '';
-  const cx = W/2, cy = H/2;
-
-  // SVG feltro (mesmo padrão)
-  const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
-  svg.setAttribute('width','100%'); svg.setAttribute('height','100%');
-  svg.style.cssText = 'position:absolute;inset:0;pointer-events:none;';
-  svg.innerHTML = `<defs>
-    <filter id="evshadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="4" stdDeviation="10" flood-color="rgba(0,0,0,.8)"/>
-    </filter>
-    <radialGradient id="evfelt" cx="50%" cy="42%" r="62%">
-      <stop offset="0%" stop-color="#1e6b34"/>
-      <stop offset="65%" stop-color="#145228"/>
-      <stop offset="100%" stop-color="#0b3318"/>
-    </radialGradient>
-    <radialGradient id="evshine" cx="50%" cy="35%" r="55%">
-      <stop offset="0%" stop-color="rgba(255,255,255,.06)"/>
-      <stop offset="100%" stop-color="rgba(0,0,0,0)"/>
-    </radialGradient>
-  </defs>
-  <ellipse cx="${cx}" cy="${cy}" rx="${W*0.475}" ry="${H*0.46}" fill="#4a2e0a" filter="url(#evshadow)"/>
-  <ellipse cx="${cx}" cy="${cy}" rx="${W*0.438}" ry="${H*0.425}" fill="url(#evfelt)"/>
-  <ellipse cx="${cx}" cy="${cy*0.7}" rx="${W*0.28}" ry="${H*0.18}" fill="url(#evshine)"/>
-  <ellipse cx="${cx}" cy="${cy}" rx="${W*0.388}" ry="${H*0.37}" fill="none" stroke="rgba(201,168,76,.15)" stroke-width="1.5"/>`;
-  canvas.appendChild(svg);
-
-  const cw = Math.max(Math.min(W*0.062, 44), 24);
-  const ch = cw * 1.42;
-  const gap = cw * 0.18;
-
-  // Board no centro
-  const bStartX = cx - (5*cw + 4*gap)/2;
-  const bY = cy - ch/2 - H*0.04;
-  for(let i = 0; i < 5; i++){
-    const c = board[i];
-    const el = document.createElement('div');
-    el.className = 't-card' + (c ? (isRed(c.slice(-1)) ? ' red' : ' black') : ' empty');
-    el.style.cssText = `position:absolute;left:${bStartX+i*(cw+gap)}px;top:${bY}px;width:${cw}px;height:${ch}px;border-radius:${cw*0.13}px;`;
-    if(c){ const{r,s}=lbl(c); el.innerHTML=`<span class="tr" style="font-size:${cw*0.37}px">${r}</span><span class="ts" style="font-size:${cw*0.37}px">${s}</span>`; }
-    else { el.innerHTML=`<span style="font-size:9px;color:rgba(255,255,255,.15)">·</span>`; }
-    canvas.appendChild(el);
-  }
-
-  // Herói em baixo com suas cartas
-  const heroY = cy + H*0.32;
-  const hcw = Math.max(Math.min(W*0.062, 44), 24);
-  const hch = hcw * 1.42;
-  const hero = document.createElement('div');
-  hero.style.cssText = `position:absolute;left:${cx}px;top:${heroY}px;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:5px;`;
-
-  const hRow = document.createElement('div');
-  hRow.style.cssText = 'display:flex;gap:5px;';
+  const handEl  = document.getElementById('ev-hand-cards');
+  const boardEl = document.getElementById('ev-board-cards');
+  const boardLbl = document.getElementById('ev-board-label');
+  if(!handEl) return;
 
   const equity = parseFloat(document.getElementById('ev-equity')?.value) || null;
+  const winColor = equity ? (equity>=60?'#00d472':equity>=40?'#e8c96d':'#e74c3c') : null;
 
-  for(let ci = 0; ci < 2; ci++){
+  // Renderiza cartas da mão
+  handEl.innerHTML = '';
+  for(let ci=0;ci<2;ci++){
     const c = hole[ci];
-    const cardEl = document.createElement('div');
-    cardEl.className = 't-card' + (c ? (isRed(c.slice(-1)) ? ' red' : ' black') : ' empty');
-    cardEl.style.cssText = `position:relative;width:${hcw}px;height:${hch}px;border-radius:${hcw*0.13}px;`;
+    const card = document.createElement('div');
     if(c){
-      const{r,s}=lbl(c);
-      cardEl.innerHTML=`<span class="tr" style="font-size:${hcw*0.37}px">${r}</span><span class="ts" style="font-size:${hcw*0.37}px">${s}</span>`;
-      if(equity !== null){
-        const glow = equity >= 50 ? 'rgba(0,212,114,.5)' : equity >= 35 ? 'rgba(201,168,76,.5)' : 'rgba(231,76,60,.4)';
-        cardEl.style.boxShadow = `0 0 12px 3px ${glow},0 3px 8px rgba(0,0,0,.5)`;
-      }
+      const{r,s,red}=lbl(c);
+      card.className = `slot filled ${red?'red-card':'black-card'}`;
+      card.innerHTML = `<span class="slot-rank">${r}</span><span class="slot-suit">${s}</span>`;
+      if(winColor) card.style.boxShadow = `0 0 10px 2px ${winColor}66`;
     } else {
-      cardEl.innerHTML = `<span style="font-size:9px;color:rgba(255,255,255,.2)">?</span>`;
+      card.className = 'slot';
+      card.style.cssText = 'opacity:.4';
+      card.innerHTML = '<span style="font-size:9px;color:rgba(201,168,76,.3)">?</span>';
     }
-    hRow.appendChild(cardEl);
-  }
-  hero.appendChild(hRow);
-
-  // Badge de equity se disponível
-  if(equity !== null){
-    const winColor = equity >= 60 ? '#00d472' : equity >= 40 ? '#e8c96d' : '#e74c3c';
-    const badge = document.createElement('div');
-    badge.style.cssText = `padding:3px 12px;border-radius:12px;
-      font-family:'JetBrains Mono',monospace;font-weight:700;font-size:${Math.max(W*0.022,12)}px;
-      background:rgba(0,0,0,.65);border:2px solid ${winColor};color:${winColor};
-      white-space:nowrap;box-shadow:0 0 10px ${winColor}44;`;
-    badge.textContent = equity + '%';
-    hero.appendChild(badge);
+    handEl.appendChild(card);
   }
 
-  const youLbl = document.createElement('span');
-  youLbl.style.cssText = `font-family:'Rajdhani',sans-serif;font-weight:700;font-size:${Math.max(W*0.015,9)}px;color:rgba(255,255,255,.35);letter-spacing:.1em;`;
-  youLbl.textContent = 'VOCÊ';
-  hero.appendChild(youLbl);
-  canvas.appendChild(hero);
+  // Renderiza board se tiver cartas
+  boardEl.innerHTML = '';
+  const bCards = board.filter(Boolean);
+  if(boardLbl) boardLbl.textContent = bCards.length ? 'BOARD' : '';
+  for(let i=0;i<5;i++){
+    const c = board[i];
+    if(!c) continue;
+    const card = document.createElement('div');
+    const{r,s,red}=lbl(c);
+    card.className = `slot filled ${red?'red-card':'black-card'}`;
+    card.style.cssText = 'transform:scale(.85);transform-origin:left center;';
+    card.innerHTML = `<span class="slot-rank">${r}</span><span class="slot-suit">${s}</span>`;
+    boardEl.appendChild(card);
+  }
 }
 
 // ── MESA DA CALCULADORA ──────────────────────────────────
@@ -1732,10 +1679,7 @@ function renderCalcTable(winPct){
     if(c){
       const{r,s}=lbl(c);
       cardEl.innerHTML=`<span class="tr" style="font-size:${hcw*0.37}px">${r}</span><span class="ts" style="font-size:${hcw*0.37}px">${s}</span>`;
-      if(winPct!==undefined){
-        const glow=winPct>=50?'rgba(0,212,114,.6)':winPct>=35?'rgba(201,168,76,.6)':'rgba(231,76,60,.4)';
-        cardEl.style.boxShadow=`0 0 14px 3px ${glow},0 3px 8px rgba(0,0,0,.5)`;
-      }
+
     } else {
       cardEl.innerHTML=`<span style="font-size:9px;color:rgba(255,255,255,.2)">?</span>`;
     }
@@ -1744,16 +1688,7 @@ function renderCalcTable(winPct){
   hero.appendChild(hRow);
 
   // Badge de equity
-  if(winPct!==undefined){
-    const winColor=winPct>=60?'#00d472':winPct>=40?'#e8c96d':'#e74c3c';
-    const badge=document.createElement('div');
-    badge.style.cssText=`padding:3px 12px;border-radius:12px;
-      font-family:'JetBrains Mono',monospace;font-weight:700;font-size:${Math.max(W*0.024,13)}px;
-      background:rgba(0,0,0,.65);border:2px solid ${winColor};color:${winColor};
-      white-space:nowrap;box-shadow:0 0 12px ${winColor}55;letter-spacing:.04em;`;
-    badge.textContent=winPct+'%';
-    hero.appendChild(badge);
-  }
+
 
   const youLbl=document.createElement('span');
   youLbl.style.cssText=`font-family:'Rajdhani',sans-serif;font-weight:700;font-size:${Math.max(W*0.016,9)}px;color:rgba(255,255,255,.35);letter-spacing:.1em;`;
@@ -2475,7 +2410,7 @@ if(calcCanvas && window.ResizeObserver){
 }
 const evCanvas = document.getElementById('ev-poker-table');
 if(evCanvas && window.ResizeObserver){
-  new ResizeObserver(()=>renderEvTable()).observe(evCanvas);
+  new ResizeObserver(()=>{}).observe(evCanvas);
 }
 window.addEventListener('resize', ()=>{
   if(mode==='compare') renderPokerTable();
@@ -2517,111 +2452,33 @@ document.addEventListener('touchmove', ()=>{
 
 @app.route('/healthcheck')
 def healthcheck():
-    """Endpoint leve para anti-hibernação (UptimeRobot / cron-job.org)."""
-    return jsonify({
-        'status': 'ok',
-        'service': 'pokercalc',
-        'jobs_active': sum(1 for j in _JOBS.values() if j['status'] == 'running'),
-        'cache_entries': len(_CACHE),
-        'ts': int(time.time())
-    })
+    return __import__('flask').jsonify({'status':'ok','ts':__import__('time').time()})
 
 @app.route('/calculate', methods=['OPTIONS'])
 @app.route('/compare',   methods=['OPTIONS'])
 @app.route('/status/<jid>', methods=['OPTIONS'])
 def handle_options(jid=None):
-    """Responde preflight CORS do browser."""
     return '', 204
 
 @app.route('/')
 def index():
     return HTML
 
-# ─── FAVICON ──────────────────────────────────────────
-FAVICON_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="6" fill="#071a10"/>
-  <text x="16" y="24" text-anchor="middle" font-size="22" fill="#c9a84c">♠</text>
-</svg>"""
-
 @app.route('/favicon.ico')
 @app.route('/favicon.svg')
 def favicon():
-    return Response(FAVICON_SVG, mimetype='image/svg+xml',
-                    headers={'Cache-Control':'public,max-age=86400'})
-
-# ─── PÁGINAS DE ERRO ──────────────────────────────────
-ERROR_HTML = """<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>PokerCalc — {code}</title>
-<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;700&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet"/>
-<style>
-*{{box-sizing:border-box;margin:0;padding:0;}}
-body{{font-family:'Rajdhani',sans-serif;background:#071a10;color:#f5ead4;
-  min-height:100vh;display:flex;align-items:center;justify-content:center;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect width='4' height='4' fill='%230d2318'/%3E%3C/svg%3E");}}
-.card{{background:rgba(13,35,24,.85);border:1px solid rgba(201,168,76,.25);
-  border-radius:16px;padding:48px 40px;text-align:center;max-width:420px;
-  box-shadow:0 20px 60px rgba(0,0,0,.6);}}
-.suit{{font-size:56px;margin-bottom:16px;display:block;}}
-.code{{font-family:'JetBrains Mono',monospace;font-size:56px;font-weight:700;
-  color:#c9a84c;text-shadow:0 0 20px rgba(201,168,76,.4);margin-bottom:8px;}}
-.title{{font-size:20px;font-weight:700;letter-spacing:.1em;
-  text-transform:uppercase;color:rgba(255,255,255,.7);margin-bottom:12px;}}
-.msg{{font-size:14px;color:rgba(255,255,255,.4);line-height:1.6;margin-bottom:32px;}}
-.btn{{display:inline-block;padding:12px 32px;background:linear-gradient(135deg,#c9a84c,#e8c96d);
-  color:#0d1f12;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:14px;
-  letter-spacing:.12em;text-transform:uppercase;border-radius:8px;
-  text-decoration:none;transition:opacity .2s;}}
-.btn:hover{{opacity:.85;}}
-</style>
-</head>
-<body>
-<div class="card">
-  <span class="suit">{suit}</span>
-  <div class="code">{code}</div>
-  <div class="title">{title}</div>
-  <p class="msg">{message}</p>
-  <a href="/" class="btn">← Voltar ao PokerCalc</a>
-</div>
-</body>
-</html>"""
+    svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#071a10"/></svg>'
+    return __import__('flask').Response(svg, mimetype='image/svg+xml')
 
 @app.errorhandler(404)
 def not_found(e):
-    html = ERROR_HTML.format(
-        code='404', suit='♦',
-        title='Página não encontrada',
-        message='A página que você procura não existe.<br>Mas o PokerCalc está te esperando!'
-    )
-    return html, 404
+    return '<h1>404</h1>', 404
 
 @app.errorhandler(500)
 def server_error(e):
-    html = ERROR_HTML.format(
-        code='500', suit='♣',
-        title='Erro interno',
-        message='Algo deu errado no servidor.<br>Já estamos de olho. Tente novamente em instantes.'
-    )
-    return html, 500
-
-@app.errorhandler(429)
-def too_many(e):
-    html = ERROR_HTML.format(
-        code='429', suit='♠',
-        title='Muitas requisições',
-        message='Você fez muitas requisições em pouco tempo.<br>Aguarde um momento e tente novamente.'
-    )
-    return html, 429
+    return '<h1>500</h1>', 500
 
 if __name__ == '__main__':
-    if '--test' in sys.argv:
-        sys.exit(0 if run_tests() else 1)
-    print("\n  ♠  PokerCalc rodando em → http://localhost:8080")
-    print("  Dica: python app.py --test  para rodar os testes")
-    print("  Produção: gunicorn app:app --workers 2 --threads 4 --timeout 120\n")
-    port  = int(os.environ.get('PORT', 8080))
-    debug = os.environ.get('FLASK_ENV') != 'production'
-    app.run(debug=debug, host='0.0.0.0', port=port)
+    import os, sys
+    port = int(os.environ.get('PORT', 8080))
+    app.run(debug=True, host='0.0.0.0', port=port)
