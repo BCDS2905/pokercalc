@@ -1182,6 +1182,14 @@ input.ev-input:focus{border-color:var(--gold);}
 
 <!-- VALE A PENA? -->
 <div id="mode-ev" style="display:none">
+
+<!-- Mesa do Vale a Pena? -->
+<div class="glass overflow-hidden mb-4">
+  <div class="poker-table-wrap">
+    <div class="poker-table-inner" id="ev-poker-table"></div>
+  </div>
+</div>
+
 <div class="flex gap-4 cols">
 
   <!-- ESQUERDA: inputs -->
@@ -1350,6 +1358,8 @@ function lbl(c){const r=c.slice(0,-1),s=c.slice(-1);return{r:r==='T'?'10':r,s:SY
 let mode='calc';
 let hole=[null,null],board=[null,null,null,null,null],calcSlot={type:'hole',index:0},calcSuit='all';
 let cmpN=2,cmpHands=Array.from({length:8},()=>[null,null]),cmpActive=0,cmpSuit='all';
+let _lastCalcWin = undefined;   // último win% da calculadora
+let _lastCmpResults = null;     // últimos resultados do confronto
 let cmpBoard=[null,null,null,null,null];  // board compartilhado do confronto
 let cmpBoardActive=false;                  // true = próximo clique vai para o board
 
@@ -1359,6 +1369,8 @@ function switchMode(m){
   document.getElementById('mode-calc').style.display=m==='calc'?'block':'none';
   document.getElementById('mode-compare').style.display=m==='compare'?'block':'none';
   document.getElementById('mode-ev').style.display=m==='ev'?'block':'none';
+  if(m==='ev')      setTimeout(renderEvTable, 50);
+  if(m==='compare') setTimeout(renderPokerTable, 50);
   ['calc','compare','ev'].forEach(id=>{
     const t=document.getElementById('tab-'+id);
     if(t) t.classList.toggle('active',m===id);
@@ -1502,8 +1514,112 @@ function updateStreet(){
 function setGauge(id,pct){const el=document.getElementById(id);if(el)el.style.strokeDashoffset=CIRC-(pct/100)*CIRC;}
 
 
+
+// ── MESA DO VALE A PENA? ─────────────────────────────────
+function renderEvTable(){
+  const canvas = document.getElementById('ev-poker-table');
+  if(!canvas) return;
+  const W = canvas.offsetWidth || 600;
+  const H = canvas.offsetHeight || (W * 0.48);
+  if(W < 10) return;
+  canvas.innerHTML = '';
+  const cx = W/2, cy = H/2;
+
+  // SVG feltro (mesmo padrão)
+  const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('width','100%'); svg.setAttribute('height','100%');
+  svg.style.cssText = 'position:absolute;inset:0;pointer-events:none;';
+  svg.innerHTML = `<defs>
+    <filter id="evshadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="10" flood-color="rgba(0,0,0,.8)"/>
+    </filter>
+    <radialGradient id="evfelt" cx="50%" cy="42%" r="62%">
+      <stop offset="0%" stop-color="#1e6b34"/>
+      <stop offset="65%" stop-color="#145228"/>
+      <stop offset="100%" stop-color="#0b3318"/>
+    </radialGradient>
+    <radialGradient id="evshine" cx="50%" cy="35%" r="55%">
+      <stop offset="0%" stop-color="rgba(255,255,255,.06)"/>
+      <stop offset="100%" stop-color="rgba(0,0,0,0)"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="${cx}" cy="${cy}" rx="${W*0.475}" ry="${H*0.46}" fill="#4a2e0a" filter="url(#evshadow)"/>
+  <ellipse cx="${cx}" cy="${cy}" rx="${W*0.438}" ry="${H*0.425}" fill="url(#evfelt)"/>
+  <ellipse cx="${cx}" cy="${cy*0.7}" rx="${W*0.28}" ry="${H*0.18}" fill="url(#evshine)"/>
+  <ellipse cx="${cx}" cy="${cy}" rx="${W*0.388}" ry="${H*0.37}" fill="none" stroke="rgba(201,168,76,.15)" stroke-width="1.5"/>`;
+  canvas.appendChild(svg);
+
+  const cw = Math.max(Math.min(W*0.062, 44), 24);
+  const ch = cw * 1.42;
+  const gap = cw * 0.18;
+
+  // Board no centro
+  const bStartX = cx - (5*cw + 4*gap)/2;
+  const bY = cy - ch/2 - H*0.04;
+  for(let i = 0; i < 5; i++){
+    const c = board[i];
+    const el = document.createElement('div');
+    el.className = 't-card' + (c ? (isRed(c.slice(-1)) ? ' red' : ' black') : ' empty');
+    el.style.cssText = `position:absolute;left:${bStartX+i*(cw+gap)}px;top:${bY}px;width:${cw}px;height:${ch}px;border-radius:${cw*0.13}px;`;
+    if(c){ const{r,s}=lbl(c); el.innerHTML=`<span class="tr" style="font-size:${cw*0.37}px">${r}</span><span class="ts" style="font-size:${cw*0.37}px">${s}</span>`; }
+    else { el.innerHTML=`<span style="font-size:9px;color:rgba(255,255,255,.15)">·</span>`; }
+    canvas.appendChild(el);
+  }
+
+  // Herói em baixo com suas cartas
+  const heroY = cy + H*0.32;
+  const hcw = Math.max(Math.min(W*0.062, 44), 24);
+  const hch = hcw * 1.42;
+  const hero = document.createElement('div');
+  hero.style.cssText = `position:absolute;left:${cx}px;top:${heroY}px;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:5px;`;
+
+  const hRow = document.createElement('div');
+  hRow.style.cssText = 'display:flex;gap:5px;';
+
+  const equity = parseFloat(document.getElementById('ev-equity')?.value) || null;
+
+  for(let ci = 0; ci < 2; ci++){
+    const c = hole[ci];
+    const cardEl = document.createElement('div');
+    cardEl.className = 't-card' + (c ? (isRed(c.slice(-1)) ? ' red' : ' black') : ' empty');
+    cardEl.style.cssText = `position:relative;width:${hcw}px;height:${hch}px;border-radius:${hcw*0.13}px;`;
+    if(c){
+      const{r,s}=lbl(c);
+      cardEl.innerHTML=`<span class="tr" style="font-size:${hcw*0.37}px">${r}</span><span class="ts" style="font-size:${hcw*0.37}px">${s}</span>`;
+      if(equity !== null){
+        const glow = equity >= 50 ? 'rgba(0,212,114,.5)' : equity >= 35 ? 'rgba(201,168,76,.5)' : 'rgba(231,76,60,.4)';
+        cardEl.style.boxShadow = `0 0 12px 3px ${glow},0 3px 8px rgba(0,0,0,.5)`;
+      }
+    } else {
+      cardEl.innerHTML = `<span style="font-size:9px;color:rgba(255,255,255,.2)">?</span>`;
+    }
+    hRow.appendChild(cardEl);
+  }
+  hero.appendChild(hRow);
+
+  // Badge de equity se disponível
+  if(equity !== null){
+    const winColor = equity >= 60 ? '#00d472' : equity >= 40 ? '#e8c96d' : '#e74c3c';
+    const badge = document.createElement('div');
+    badge.style.cssText = `padding:3px 12px;border-radius:12px;
+      font-family:'JetBrains Mono',monospace;font-weight:700;font-size:${Math.max(W*0.022,12)}px;
+      background:rgba(0,0,0,.65);border:2px solid ${winColor};color:${winColor};
+      white-space:nowrap;box-shadow:0 0 10px ${winColor}44;`;
+    badge.textContent = equity + '%';
+    hero.appendChild(badge);
+  }
+
+  const youLbl = document.createElement('span');
+  youLbl.style.cssText = `font-family:'Rajdhani',sans-serif;font-weight:700;font-size:${Math.max(W*0.015,9)}px;color:rgba(255,255,255,.35);letter-spacing:.1em;`;
+  youLbl.textContent = 'VOCÊ';
+  hero.appendChild(youLbl);
+  canvas.appendChild(hero);
+}
+
 // ── MESA DA CALCULADORA ──────────────────────────────────
 function renderCalcTable(winPct){
+  if(winPct !== undefined) _lastCalcWin = winPct;
+  else winPct = _lastCalcWin;
   const canvas=document.getElementById('calc-poker-table');
   if(!canvas)return;
   const W=canvas.offsetWidth||600;
@@ -1774,6 +1890,7 @@ function renderBeatingHands(data){
 
 function resetCalc(){
   hole=[null,null];board=[null,null,null,null,null];calcSlot={type:'hole',index:0};
+  _lastCalcWin = undefined;
   renderCalcSlots();applyLayout();activateCalcSlot('hole',0);updateStreet();
   ['win','tie','lose'].forEach(k=>{setGauge('gc-'+k,0);document.getElementById(k+'-pct').textContent='—';});
   document.getElementById('eq-bars').style.display='none';document.getElementById('hand-badge').style.display='none';
@@ -1838,6 +1955,8 @@ function buildCmpDeck(){
 // MESA DE POKER
 // ─────────────────────────────────────────────
 function renderPokerTable(results){
+  if(results !== undefined) _lastCmpResults = results;
+  else results = _lastCmpResults;
   const canvas=document.getElementById('poker-table-canvas');
   if(!canvas)return;
   const W=canvas.offsetWidth||600;
@@ -2089,6 +2208,7 @@ function renderCmpResults(data,board){
 function resetCmp(){
   cmpHands=Array.from({length:8},()=>[null,null]);cmpActive=0;
   cmpBoard=[null,null,null,null,null];cmpBoardActive=false;
+  _lastCmpResults = null;
   renderPlayers();renderCmpBoardSlots();buildCmpDeck();updateCmpStreet();
   document.getElementById('cmp-global').style.display='none';document.getElementById('cmp-results').innerHTML='';
   document.getElementById('cmp-hint').style.display='block';document.getElementById('sim-counter').textContent='— simulações';
@@ -2141,6 +2261,7 @@ function importEquity(){
   hint.textContent = '✓ Equity importada: ' + lastCalcEquity + '%';
   hint.style.color = '#00d472';
   calcEV();
+  try{ renderEvTable(); }catch(e){}
 }
 
 function calcEV(){
@@ -2341,6 +2462,10 @@ if(pokerCanvas && window.ResizeObserver){
 const calcCanvas = document.getElementById('calc-poker-table');
 if(calcCanvas && window.ResizeObserver){
   new ResizeObserver(()=>renderCalcTable()).observe(calcCanvas);
+}
+const evCanvas = document.getElementById('ev-poker-table');
+if(evCanvas && window.ResizeObserver){
+  new ResizeObserver(()=>renderEvTable()).observe(evCanvas);
 }
 window.addEventListener('resize', ()=>{
   if(mode==='compare') renderPokerTable();
