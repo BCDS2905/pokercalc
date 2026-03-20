@@ -2644,7 +2644,7 @@ def _patch_fonts():
 _patch_fonts()
 
 # ── Google Analytics ────────────────────────────────────────────────────────
-_GA_ID = os.environ.get('GA_MEASUREMENT_ID', 'G-BTW9TEZ6DJ').strip()
+_GA_ID = os.environ.get('GA_MEASUREMENT_ID', 'G-24ME1E1YMV').strip()
 if _GA_ID:
     _ga_snippet = (
         f'<script async src="https://www.googletagmanager.com/gtag/js?id={_GA_ID}"></script>'
