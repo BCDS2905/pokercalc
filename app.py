@@ -46,11 +46,11 @@ def set_security_headers(response):
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['Content-Security-Policy'] = (
         "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; "
+        "script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://www.googletagmanager.com; "
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
         "font-src 'self' https://fonts.gstatic.com; "
-        "img-src 'self' data:; "
-        "connect-src 'self'; "
+        "img-src 'self' data: https://www.googletagmanager.com; "
+        "connect-src 'self' https://www.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net; "
         "frame-ancestors 'none';"
     )
     if os.environ.get('FLASK_ENV') == 'production':
@@ -1390,6 +1390,10 @@ input.ev-input:focus{border-color:var(--gold);}
 </main>
 <footer class="text-center py-3 text-xs font-mono" style="color:rgba(201,168,76,.2);border-top:1px solid rgba(201,168,76,.07)">
   POKERCALC · Monte Carlo Engine · Texas Hold'em
+  <span style="margin:0 8px;opacity:.4">·</span>
+  <a href="/privacidade" style="color:rgba(201,168,76,.35);text-decoration:none;transition:color .2s" onmouseover="this.style.color='rgba(201,168,76,.8)'" onmouseout="this.style.color='rgba(201,168,76,.35)'">Privacidade</a>
+  <span style="margin:0 6px;opacity:.4">·</span>
+  <a href="/termos" style="color:rgba(201,168,76,.35);text-decoration:none;transition:color .2s" onmouseover="this.style.color='rgba(201,168,76,.8)'" onmouseout="this.style.color='rgba(201,168,76,.35)'">Termos de Uso</a>
 </footer>
 </div>
 
@@ -2639,6 +2643,24 @@ def _patch_fonts():
 
 _patch_fonts()
 
+# ── Google Analytics ────────────────────────────────────────────────────────
+_GA_ID = os.environ.get('GA_MEASUREMENT_ID', 'G-BTW9TEZ6DJ').strip()
+if _GA_ID:
+    _ga_snippet = (
+        f'<script async src="https://www.googletagmanager.com/gtag/js?id={_GA_ID}"></script>'
+        f'<script>window.dataLayer=window.dataLayer||[];'
+        f'function gtag(){{dataLayer.push(arguments);}}'
+        f"gtag('js',new Date());gtag('config','{_GA_ID}');"
+        f'</script>'
+    )
+    HTML = HTML.replace(
+        '<script src="https://cdn.tailwindcss.com"></script>',
+        _ga_snippet + '<script src="https://cdn.tailwindcss.com"></script>'
+    )
+    print(f'  📊  Google Analytics ativo: {_GA_ID}')
+else:
+    print('  📊  Google Analytics desativado (defina GA_MEASUREMENT_ID no Render para ativar)')
+
 @app.errorhandler(404)
 def not_found(e):
     html = _ERROR_PAGE.format(
@@ -2656,6 +2678,122 @@ def server_error(e):
         desc='Algo deu errado no servidor.<br>Tente novamente em alguns instantes.'
     )
     return html, 500
+
+def _legal_page(title, body_html):
+    """Gera página de conteúdo legal com o tema do site."""
+    return f"""<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>PokerCalc — {title}</title>
+<link rel="icon" type="image/png" href="/favicon.png"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+:root{{--felt:#0d2318;--felt-edge:#071a10;--gold:#c9a84c;--cream:#f5ead4;}}
+*{{box-sizing:border-box;margin:0;padding:0;}}
+body{{font-family:system-ui,sans-serif;background:var(--felt-edge);color:var(--cream);min-height:100vh;padding:0 16px 48px;}}
+.wrap{{max-width:720px;margin:0 auto;}}
+h1{{font-size:28px;font-weight:700;letter-spacing:.08em;color:var(--gold);margin:32px 0 8px;}}
+h2{{font-size:16px;font-weight:700;color:var(--gold);opacity:.8;margin:28px 0 8px;letter-spacing:.06em;text-transform:uppercase;}}
+p,li{{font-size:14px;line-height:1.8;color:rgba(245,234,212,.65);margin-bottom:8px;}}
+ul{{padding-left:20px;}}
+a{{color:var(--gold);text-decoration:none;}}
+a:hover{{text-decoration:underline;}}
+.back{{display:inline-flex;align-items:center;gap:6px;color:rgba(201,168,76,.5);font-size:13px;margin-top:28px;margin-bottom:4px;}}
+.back:hover{{color:var(--gold);}}
+hr{{border:none;border-top:1px solid rgba(201,168,76,.12);margin:24px 0;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a href="/" class="back">← Voltar ao PokerCalc</a>
+  <h1>{title}</h1>
+  <p style="font-size:12px;color:rgba(255,255,255,.25);margin-bottom:24px">Última atualização: março de 2025</p>
+  {body_html}
+  <hr/>
+  <p style="font-size:12px;color:rgba(255,255,255,.2);text-align:center;margin-top:24px">
+    PokerCalc · <a href="mailto:pokercalc.suporte@gmail.com">pokercalc.suporte@gmail.com</a>
+  </p>
+</div>
+</body>
+</html>"""
+
+@app.route('/privacidade')
+def privacidade():
+    body = """
+<h2>1. Quem somos</h2>
+<p>PokerCalc (<a href="https://pokercalc.com.br">pokercalc.com.br</a>) é uma calculadora de probabilidades para Texas Hold'em. Não exigimos cadastro nem armazenamos dados pessoais identificáveis.</p>
+
+<h2>2. Dados coletados automaticamente</h2>
+<p>Nosso servidor registra automaticamente logs de acesso que podem conter:</p>
+<ul>
+  <li>Endereço IP (anonimizado após 30 dias)</li>
+  <li>Data, hora e página acessada</li>
+  <li>Tipo de navegador e sistema operacional</li>
+</ul>
+<p>Esses dados são usados exclusivamente para diagnóstico técnico e segurança.</p>
+
+<h2>3. Cookies e Analytics</h2>
+<p>Utilizamos o <strong>Google Analytics</strong> para entender como os usuários interagem com o site (páginas visitadas, tempo de sessão, localização aproximada por país). O Google Analytics usa cookies próprios. Você pode desativá-los através das <a href="https://tools.google.com/dlpage/gaoptout" target="_blank">ferramentas de opt-out do Google</a>.</p>
+<p>O site em si não utiliza cookies de sessão nem armazena informações no seu navegador além do necessário para o funcionamento da calculadora.</p>
+
+<h2>4. Dados de cálculo</h2>
+<p>As cartas e valores inseridos na calculadora são processados em memória e descartados imediatamente após o cálculo. Não são salvos em banco de dados nem associados a você.</p>
+
+<h2>5. Compartilhamento de dados</h2>
+<p>Não vendemos, alugamos nem compartilhamos seus dados com terceiros, exceto os serviços de infraestrutura necessários para operar o site (Render.com para hospedagem, Google Analytics para métricas).</p>
+
+<h2>6. Seus direitos (LGPD)</h2>
+<p>Conforme a Lei Geral de Proteção de Dados (Lei nº 13.709/2018), você tem direito a:</p>
+<ul>
+  <li>Confirmação de tratamento de dados</li>
+  <li>Acesso, correção ou exclusão dos seus dados</li>
+  <li>Revogação de consentimento</li>
+</ul>
+<p>Para exercer esses direitos, entre em contato: <a href="mailto:pokercalc.suporte@gmail.com">pokercalc.suporte@gmail.com</a></p>
+
+<h2>7. Alterações nesta política</h2>
+<p>Podemos atualizar esta política periodicamente. Alterações significativas serão informadas nesta página com nova data de atualização.</p>
+"""
+    return _legal_page('Política de Privacidade', body)
+
+@app.route('/termos')
+def termos():
+    body = """
+<h2>1. Aceitação dos termos</h2>
+<p>Ao acessar e usar o PokerCalc, você concorda com estes Termos de Uso. Se não concordar, não utilize o serviço.</p>
+
+<h2>2. Natureza do serviço</h2>
+<p>O PokerCalc é uma ferramenta exclusivamente informativa e educacional para cálculo de probabilidades no Texas Hold'em. O site <strong>não oferece, intermedia nem incentiva apostas, jogos de azar ou qualquer modalidade de jogo com dinheiro real.</strong></p>
+<p>Os resultados exibidos são estimativas estatísticas baseadas em simulação Monte Carlo e têm finalidade puramente ilustrativa. <strong>O PokerCalc não se responsabiliza por quaisquer apostas, perdas financeiras ou decisões tomadas pelo usuário com base nos cálculos apresentados.</strong></p>
+
+<h2>3. Uso permitido</h2>
+<p>Você pode usar o PokerCalc para:</p>
+<ul>
+  <li>Aprender e estudar probabilidades no poker</li>
+  <li>Praticar análise de mãos para fins educacionais</li>
+  <li>Uso pessoal e não-comercial</li>
+</ul>
+
+<h2>4. Uso proibido</h2>
+<p>É proibido usar o PokerCalc para:</p>
+<ul>
+  <li>Acesso automatizado por bots ou scrapers sem autorização</li>
+  <li>Tentativas de sobrecarregar ou comprometer o serviço</li>
+  <li>Qualquer finalidade ilegal conforme a legislação brasileira</li>
+</ul>
+
+<h2>5. Limitação de responsabilidade</h2>
+<p>O serviço é fornecido "como está", sem garantia de disponibilidade contínua ou exatidão absoluta dos cálculos. O PokerCalc não se responsabiliza por qualquer dano direto ou indireto decorrente do uso das informações apresentadas.</p>
+
+<h2>6. Propriedade intelectual</h2>
+<p>O código, design e marca PokerCalc são de propriedade dos seus criadores. É proibida a reprodução ou uso comercial sem autorização prévia.</p>
+
+<h2>7. Contato</h2>
+<p>Dúvidas sobre estes termos: <a href="mailto:pokercalc.suporte@gmail.com">pokercalc.suporte@gmail.com</a></p>
+"""
+    return _legal_page('Termos de Uso', body)
 
 if __name__ == '__main__':
     import os, sys
