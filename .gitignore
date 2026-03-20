@@ -1,0 +1,55 @@
+# Claude Code (worktrees, memória local)
+.claude/
+
+# Backups
+*.backup
+*.bak
+*.orig
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Compilados C++
+evaluator.so
+evaluator.dylib
+evaluator.dll
+*.o
+
+# Fontes auto-hospedadas (geradas pelo build.sh)
+static/fonts/
+
+# Variáveis de ambiente
+.env
+.env.*
+!.env.example
+
+# Sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+*.log
+/tmp/
+
+# Pytest / cobertura
+.pytest_cache/
+.coverage
+htmlcov/
