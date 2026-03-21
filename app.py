@@ -502,6 +502,8 @@ def run_tests():
 HTML = r"""<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3934993142715233"
+     crossorigin="anonymous"></script>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <meta name="description" content="Calculadora de probabilidades de poker Texas Hold'em — equity, pot odds, confronto de mãos."/>
