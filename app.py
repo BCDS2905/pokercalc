@@ -103,17 +103,42 @@ def check_origin():
         if origin and not any(a in origin for a in allowed):
             return jsonify({'error': 'Origem não permitida.'}), 403
 # Limita cada IP a 30 requisições por minuto nas rotas de cálculo
-_RATE   = defaultdict(list)   # ip → [timestamps]
-_RATE_WINDOW  = 60            # janela em segundos
-_RATE_MAX     = 30            # máx requisições por janela
+_RATE              = defaultdict(list)  # ip → [timestamps]
+_RATE_WINDOW       = 60                 # janela em segundos
+_RATE_MAX          = 30                 # máx requisições por janela (cálculo)
+_RATE_MAX_STATUS   = 120                # máx polls /status por janela
+_RATE_LAST_PURGE   = 0.0
+_RATE_PURGE_EVERY  = 300               # purge geral a cada 5 min
 
-def _check_rate(ip):
-    """Retorna True se o IP está dentro do limite, False se excedeu."""
-    now    = time.time()
-    times  = _RATE[ip]
-    # remove timestamps fora da janela
-    _RATE[ip] = [t for t in times if now - t < _RATE_WINDOW]
-    if len(_RATE[ip]) >= _RATE_MAX:
+# Regex para validar que o IP extraído é realmente um endereço IP
+import re as _re
+_VALID_IP_RE = _re.compile(r'^[\d\.a-fA-F:]{2,64}$')
+
+def _get_client_ip():
+    """Extrai IP real do cliente com validação básica para evitar spoofing."""
+    xff = request.headers.get('X-Forwarded-For', '')
+    ip  = xff.split(',')[0].strip() if xff else ''
+    if not ip or not _VALID_IP_RE.match(ip):
+        ip = request.remote_addr or '0.0.0.0'
+    return ip[:64]
+
+def _check_rate(ip, limit=None):
+    """Retorna True se o IP está dentro do limite, False se excedeu.
+    Faz purge periódico de IPs inativos para evitar memory leak."""
+    global _RATE_LAST_PURGE
+    if limit is None:
+        limit = _RATE_MAX
+    now = time.time()
+    # Purge global de IPs inativos a cada _RATE_PURGE_EVERY segundos
+    if now - _RATE_LAST_PURGE > _RATE_PURGE_EVERY:
+        _RATE_LAST_PURGE = now
+        dead = [k for k, v in list(_RATE.items())
+                if not any(now - t < _RATE_WINDOW for t in v)]
+        for k in dead:
+            del _RATE[k]
+    # Remove timestamps fora da janela para este IP
+    _RATE[ip] = [t for t in _RATE[ip] if now - t < _RATE_WINDOW]
+    if len(_RATE[ip]) >= limit:
         return False
     _RATE[ip].append(now)
     return True
@@ -149,7 +174,10 @@ def new_job():
 def job_done(jid, r):
     if jid in _JOBS: _JOBS[jid].update({'status':'done','progress':100,'result':r,'ts':time.time()})
 def job_fail(jid, e):
-    if jid in _JOBS: _JOBS[jid].update({'status':'error','error':e,'ts':time.time()})
+    # Loga internamente (visível nos logs do Render) mas expõe apenas mensagem genérica
+    print(f'[JOB ERROR] {jid}: {e}', flush=True)
+    if jid in _JOBS:
+        _JOBS[jid].update({'status':'error','error':'Erro interno no cálculo. Tente novamente.','ts':time.time()})
 def job_prog(jid, p):
     if jid in _JOBS: _JOBS[jid]['progress'] = p
 def job_partial(jid, r):
@@ -381,7 +409,9 @@ def _run_calc(jid, hole, board, opp, sims):
         r = {'equity':eq,'draws':drw,'hand_name':nm,'street':st,
              'simulations':sims,'margin_of_error':moe,'beating_hands':beating,'partial':False}
         cache_set(k,r); job_done(jid,r)
-    except Exception as e: job_fail(jid,str(e))
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        job_fail(jid, str(e))
 
 def _run_cmp(jid, hands, board, sims):
     try:
@@ -395,12 +425,14 @@ def _run_cmp(jid, hands, board, sims):
         moe=round(100/(sims**0.5),2)
         r={'hands':rh,'board':board,'street':st,'simulations':sims,'margin_of_error':moe}
         cache_set(k,r); job_done(jid,r)
-    except Exception as e: job_fail(jid,str(e))
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        job_fail(jid, str(e))
 
 # ─── ROTAS ────────────────────────────────────
 @app.route('/calculate', methods=['POST'])
 def calculate():
-    ip = request.headers.get('X-Forwarded-For', request.remote_addr or '').split(',')[0].strip()
+    ip = _get_client_ip()
     if not _check_rate(ip):
         return jsonify({'error':'Muitas requisições. Aguarde um momento e tente novamente.'}), 429
     d = request.get_json(silent=True)
@@ -415,10 +447,12 @@ def calculate():
             return jsonify({'error': 'Formato inválido.'}), 400
     except (TypeError, ValueError):
         return jsonify({'error': 'Parâmetros inválidos.'}), 400
+    # Fix: limita oponentes ao máximo válido do poker (1–7)
+    if opp < 1 or opp > 7:
+        return jsonify({'error': 'Número de oponentes deve ser entre 1 e 7.'}), 400
     if len(hole)!=2:               return jsonify({'error':'Informe 2 cartas na mão.'}),400
     if len(board) not in [0,3,4,5]:return jsonify({'error':'Board: 0,3,4 ou 5 cartas.'}),400
     if len(hole+board)!=len(set(hole+board)): return jsonify({'error':'Cartas duplicadas.'}),400
-    # Valida que todas as cartas são strings do deck
     all_cards_valid = all(isinstance(c,str) and c in FULL_DECK for c in hole+board)
     if not all_cards_valid: return jsonify({'error':'Cartas inválidas.'}),400
     jid=new_job()
@@ -427,7 +461,7 @@ def calculate():
 
 @app.route('/compare', methods=['POST'])
 def compare():
-    ip = request.headers.get('X-Forwarded-For', request.remote_addr or '').split(',')[0].strip()
+    ip = _get_client_ip()
     if not _check_rate(ip):
         return jsonify({'error':'Muitas requisições. Aguarde um momento e tente novamente.'}), 429
     d = request.get_json(silent=True)
@@ -441,6 +475,9 @@ def compare():
             return jsonify({'error': 'Formato inválido.'}), 400
     except (TypeError, ValueError):
         return jsonify({'error': 'Parâmetros inválidos.'}), 400
+    # Fix: limita número de mãos para evitar DoS por CPU
+    if len(hands) < 2 or len(hands) > 10:
+        return jsonify({'error': 'Número de jogadores deve ser entre 2 e 10.'}), 400
     for h in hands:
         if not h or len(h)!=2: return jsonify({'error':'Cada jogador precisa de 2 cartas.'}),400
         if not all(isinstance(c,str) and c in FULL_DECK for c in h):
@@ -452,8 +489,16 @@ def compare():
     threading.Thread(target=_run_cmp,args=(jid,hands,board,sims),daemon=True).start()
     return jsonify({'job_id':jid})
 
+_JID_RE = _re.compile(r'^[0-9a-f]{8}$')
+
 @app.route('/status/<jid>')
 def status(jid):
+    # Valida formato do jid (8 hex chars) antes de qualquer lookup
+    if not _JID_RE.match(jid):
+        return jsonify({'error':'Job não encontrado.'}), 404
+    ip = _get_client_ip()
+    if not _check_rate(ip, limit=_RATE_MAX_STATUS):
+        return jsonify({'error':'Muitas requisições.'}), 429
     j=_JOBS.get(jid)
     if not j: return jsonify({'error':'Job não encontrado.'}),404
     return jsonify({
@@ -707,6 +752,32 @@ select{background:rgba(13,35,24,.9);border:1px solid rgba(201,168,76,.25);color:
   #mode-ev .grid.grid-cols-3{grid-template-columns:repeat(3,1fr)!important;gap:8px!important;}
   #mode-ev .glass.p-5{padding:14px!important;}
   #mode-ev .glass.p-4{padding:14px!important;}
+
+  /* Fix #2 — EV título: 30px → 22px */
+  #ev-title{font-size:22px!important;letter-spacing:.08em!important;}
+
+  /* Fix #3 — EV stats row: valores 24px → 16px */
+  #ev-stat-odds,#ev-stat-min,#ev-stat-ev{font-size:16px!important;}
+
+  /* Fix #4 — EV labels pot/bet/total: 20px → 14px */
+  #ev-pot-lbl,#ev-bet-lbl,#ev-total-lbl{font-size:14px!important;}
+
+  /* Fix #5 — EV explain: max-width:400px pode ultrapassar viewport */
+  #ev-explain{max-width:100%!important;}
+
+  /* Fix #6 — botões +/- jogadores: mínimo 44×44px para toque confortável */
+  #mode-compare .w-8.h-8{width:44px!important;height:44px!important;min-width:44px!important;}
+
+  /* Fix #7 — botão CALCULAR ODDS: fonte menor no mobile */
+  #calc-btn{font-size:15px!important;padding:14px 20px!important;}
+
+  /* Fix #8 — splash: logo e nome menores em telas pequenas */
+  .splash-suits{width:90px!important;height:90px!important;}
+  .splash-name{font-size:26px!important;}
+  .splash-suit-item{font-size:28px!important;}
+
+  /* Fix #9 — tooltip: largura máxima = viewport - margens */
+  .tip-box{width:min(220px,calc(100vw - 32px))!important;}
 }
 
 /* ════════════════════════════════════════
@@ -719,6 +790,13 @@ select{background:rgba(13,35,24,.9);border:1px solid rgba(201,168,76,.25);color:
   .gauge{width:76px!important;height:76px!important;}
   .g-svg{width:76px!important;height:76px!important;}
   .g-pct{font-size:13px!important;}
+
+  /* Fix iPhone SE — EV ainda menor */
+  #ev-title{font-size:18px!important;}
+  #ev-stat-odds,#ev-stat-min,#ev-stat-ev{font-size:13px!important;}
+  #ev-pot-lbl,#ev-bet-lbl,#ev-total-lbl{font-size:12px!important;}
+  .splash-suits{width:76px!important;height:76px!important;}
+  .splash-name{font-size:22px!important;}
 }
 
 /* ── Tooltip ── */
@@ -1301,7 +1379,7 @@ input.ev-input:focus{border-color:var(--gold);}
           <div class="text-xs mb-2" style="color:rgba(255,255,255,.3);letter-spacing:.12em">SUAS CARTAS</div>
           <div id="ev-hand-cards" style="display:flex;gap:6px;"></div>
           <div id="ev-board-label" class="text-xs mt-2 mb-1" style="color:rgba(255,255,255,.3);letter-spacing:.12em;min-height:14px;"></div>
-          <div id="ev-board-cards" style="display:flex;gap:4px;flex-wrap:wrap;"></div>
+          <div id="ev-board-cards" style="display:flex;gap:4px;flex-wrap:nowrap;"></div>
         </div>
       </div>
     </div>
@@ -2261,7 +2339,7 @@ function flash(msg, type='error'){
   const fg = type==='info' ? '#0d2318' : 'white';
   const dur = type==='info' ? 4000 : 3000;
   const el=document.createElement('div');el.textContent=msg;
-  el.style.cssText=`position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:${bg};color:${fg};padding:9px 22px;border-radius:8px;font-family:Rajdhani,sans-serif;font-size:14px;z-index:9999;letter-spacing:.05em;box-shadow:0 4px 16px rgba(0,0,0,.4)`;
+  el.style.cssText=`position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:${bg};color:${fg};padding:9px 22px;border-radius:8px;font-family:Rajdhani,sans-serif;font-size:14px;z-index:9999;letter-spacing:.05em;box-shadow:0 4px 16px rgba(0,0,0,.4);max-width:calc(100vw - 32px);text-align:center;white-space:normal;word-break:break-word;`;
   document.body.appendChild(el);setTimeout(()=>el.remove(),dur);
 }
 document.addEventListener('keydown',e=>{
@@ -2800,4 +2878,4 @@ def termos():
 if __name__ == '__main__':
     import os, sys
     port = int(os.environ.get('PORT', 8080))
-    app.run(debug=True, host='0.0.0.0', port=port)
+    app.run(debug=os.environ.get('FLASK_DEBUG','False')=='True', host='0.0.0.0', port=port)
