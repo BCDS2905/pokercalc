@@ -550,11 +550,23 @@ HTML = r"""<!DOCTYPE html>
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3934993142715233"
      crossorigin="anonymous"></script>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
 <meta name="description" content="Calculadora de probabilidades de poker Texas Hold'em — equity, pot odds, confronto de mãos."/>
 <meta name="theme-color" content="#071a10"/>
 <title>PokerCalc — Calculadora de Poker</title>
-<link rel="icon" type="image/png" href="/favicon.png"/><link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
+
+<!-- PWA Manifest -->
+<link rel="manifest" href="/manifest.json"/>
+
+<!-- iOS PWA (Safari não lê o manifest) -->
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="PokerCalc"/>
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"/>
+<link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png"/>
+
+<!-- Ícones e favicon -->
+<link rel="icon" type="image/png" href="/favicon.png"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
 <style>
@@ -574,10 +586,11 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .card-suit{font-size:14px;line-height:1;}
 .red-card .card-rank,.red-card .card-suit{color:var(--red-suit);}
 .black-card .card-rank,.black-card .card-suit{color:#1a1a1a;}
-.slot{width:60px;height:84px;border-radius:8px;border:2px dashed rgba(201,168,76,.35);background:rgba(13,35,24,.6);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;flex-shrink:0;}
+.slot{width:60px;height:84px;border-radius:8px;border:2px dashed rgba(201,168,76,.35);background:rgba(13,35,24,.6);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;flex-shrink:0;box-shadow:inset 0 0 14px rgba(201,168,76,.06);}
+.slot:not(.filled):hover{border-color:rgba(201,168,76,.6);box-shadow:inset 0 0 20px rgba(201,168,76,.12);}
 .slot.filled{border:2px solid rgba(201,168,76,.6);background:var(--card-bg);box-shadow:0 6px 20px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.8);}
 .slot.filled:hover{box-shadow:0 0 0 2px var(--red-suit),0 6px 16px rgba(0,0,0,.5);}
-.slot.active{border-color:var(--gold);box-shadow:0 0 0 2px rgba(201,168,76,.4);animation:pulse-slot 1.5s ease infinite;}
+.slot.active{border-color:var(--gold);border-style:solid;box-shadow:0 0 0 2px rgba(201,168,76,.35),inset 0 0 20px rgba(201,168,76,.14),0 0 18px rgba(201,168,76,.18);animation:pulse-slot 1.5s ease infinite;}
 .slot-rank{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:17px;line-height:1;}
 .slot-suit{font-size:17px;line-height:1;}
 .slot.filled.red-card .slot-rank,.slot.filled.red-card .slot-suit{color:var(--red-suit);}
@@ -690,13 +703,14 @@ select{background:rgba(13,35,24,.9);border:1px solid rgba(201,168,76,.25);color:
   .slot-rank{font-size:18px!important;}
   .slot-suit{font-size:18px!important;}
 
-  /* Deck mobile: por naipe, scroll horizontal */
+  /* Deck mobile: por naipe, scroll horizontal, cards compactos */
   #deck-grid-wrap-desktop{display:none!important;}
   #deck-mobile{display:flex!important;}
-  /* Esconde filtro de naipe no mobile (deck já é por naipe) */
   #mode-calc .stab, #mode-compare .stab{display:none!important;}
-  .playing-card{width:50px!important;height:70px!important;flex-shrink:0!important;border-radius:7px!important;}
-  .card-rank,.card-suit{font-size:14px!important;}
+  .playing-card{width:42px!important;height:58px!important;flex-shrink:0!important;border-radius:6px!important;}
+  .card-rank,.card-suit{font-size:12px!important;}
+  .deck-suit-row{gap:3px!important;}
+  .deck-suit-label{font-size:16px!important;width:22px!important;}
 
   /* Quick hands: scroll horizontal, sem quebra */
   .qh-scroll{flex-wrap:nowrap!important;overflow-x:auto!important;-webkit-overflow-scrolling:touch;scrollbar-width:none;gap:6px!important;}
@@ -771,10 +785,18 @@ select{background:rgba(13,35,24,.9);border:1px solid rgba(201,168,76,.25);color:
   /* Fix #7 — botão CALCULAR ODDS: fonte menor no mobile */
   #calc-btn{font-size:15px!important;padding:14px 20px!important;}
 
-  /* Fix #8 — splash: logo e nome menores em telas pequenas */
-  .splash-suits{width:90px!important;height:90px!important;}
-  .splash-name{font-size:26px!important;}
-  .splash-suit-item{font-size:28px!important;}
+  /* Fix #8 — splash: logo circular sem distorção */
+  .splash-logo img{
+    width:min(190px,50vw)!important;
+    height:min(190px,50vw)!important;
+    aspect-ratio:1/1!important;
+    object-fit:contain!important;
+    max-width:80vw!important;
+  }
+  .splash-logo{gap:14px!important;}
+  .splash-tag{font-size:10px!important;letter-spacing:.15em!important;margin-top:-4px!important;}
+  .splash-bar-wrap{margin-top:18px!important;width:130px!important;}
+  .splash-msg{font-size:11px!important;}
 
   /* Fix #9 — tooltip: largura máxima = viewport - margens */
   .tip-box{width:min(220px,calc(100vw - 32px))!important;}
@@ -784,8 +806,8 @@ select{background:rgba(13,35,24,.9);border:1px solid rgba(201,168,76,.25);color:
    MOBILE — 400px (iPhone SE)
 ════════════════════════════════════════ */
 @media(max-width:400px){
-  .playing-card{width:44px!important;height:62px!important;}
-  .card-rank,.card-suit{font-size:12px!important;}
+  .playing-card{width:36px!important;height:50px!important;}
+  .card-rank,.card-suit{font-size:10px!important;}
   .slot{width:52px!important;height:72px!important;}
   .gauge{width:76px!important;height:76px!important;}
   .g-svg{width:76px!important;height:76px!important;}
@@ -795,9 +817,58 @@ select{background:rgba(13,35,24,.9);border:1px solid rgba(201,168,76,.25);color:
   #ev-title{font-size:18px!important;}
   #ev-stat-odds,#ev-stat-min,#ev-stat-ev{font-size:13px!important;}
   #ev-pot-lbl,#ev-bet-lbl,#ev-total-lbl{font-size:12px!important;}
-  .splash-suits{width:76px!important;height:76px!important;}
-  .splash-name{font-size:22px!important;}
+  .splash-logo img{
+    width:min(150px,42vw)!important;
+    height:min(150px,42vw)!important;
+    aspect-ratio:1/1!important;
+    object-fit:contain!important;
+  }
+  .splash-logo{gap:10px!important;}
+  .splash-tag{font-size:9px!important;}
+  .splash-bar-wrap{margin-top:14px!important;width:110px!important;}
 }
+
+/* ════════════════════════════════════════
+   PWA — iOS Safe Area + Standalone
+════════════════════════════════════════ */
+
+/* Compensação da notch/home indicator no iPhone */
+@supports(padding-bottom: env(safe-area-inset-bottom)){
+  @media(max-width:600px){
+    #mobile-bottom-nav{
+      padding-bottom:env(safe-area-inset-bottom);
+      height:calc(68px + env(safe-area-inset-bottom));
+    }
+    body{
+      padding-bottom:calc(68px + env(safe-area-inset-bottom))!important;
+    }
+  }
+}
+
+/* Quando instalado como PWA standalone */
+@media(display-mode: standalone){
+  header{
+    padding-top:max(10px, env(safe-area-inset-top));
+  }
+  /* Remove bordas redundantes no standalone */
+  .hdr{border-bottom-color:rgba(201,168,76,.3);}
+}
+
+/* Botão de instalar PWA */
+#pwa-install-btn{
+  display:none;
+  position:fixed;bottom:calc(80px + env(safe-area-inset-bottom,0px));right:16px;
+  z-index:998;
+  align-items:center;gap:8px;
+  background:linear-gradient(135deg,#c9a84c,#e8c96d);
+  color:#071a10;border:none;border-radius:24px;
+  padding:10px 18px;
+  font-family:'Rajdhani',sans-serif;font-weight:700;font-size:13px;letter-spacing:.08em;
+  cursor:pointer;box-shadow:0 4px 20px rgba(201,168,76,.4);
+  transition:all .2s;
+}
+#pwa-install-btn:hover{transform:translateY(-2px);box-shadow:0 6px 28px rgba(201,168,76,.55);}
+#pwa-install-btn svg{width:16px;height:16px;flex-shrink:0;}
 
 /* ── Tooltip ── */
 .tip-wrap{position:relative;display:inline-flex;align-items:center;cursor:help;}
@@ -824,9 +895,10 @@ select{background:rgba(13,35,24,.9);border:1px solid rgba(201,168,76,.25);color:
 .ev-bet-btn:hover{background:rgba(201,168,76,.1);border-color:rgba(201,168,76,.45);color:var(--gold);}
 .ev-bet-btn.active-bet{background:linear-gradient(135deg,rgba(201,168,76,.25),rgba(232,201,109,.15));border-color:var(--gold);color:var(--gold-light);box-shadow:0 0 12px rgba(201,168,76,.2);}
 .verdict-box{border-radius:14px;padding:28px 20px;text-align:center;transition:all .4s ease;border:2px solid rgba(201,168,76,.15);background:rgba(13,35,24,.9);}
-.verdict-box.v-call{border-color:rgba(0,212,114,.5);background:linear-gradient(135deg,rgba(0,30,15,.95),rgba(0,20,10,.95));}
-.verdict-box.v-fold{border-color:rgba(231,76,60,.5);background:linear-gradient(135deg,rgba(30,5,5,.95),rgba(20,0,0,.95));}
-.verdict-box.v-margin{border-color:rgba(201,168,76,.45);background:linear-gradient(135deg,rgba(20,15,0,.95),rgba(13,10,0,.95));}
+.verdict-box.v-call{border-color:rgba(0,212,114,.5);background:linear-gradient(135deg,rgba(0,30,15,.95),rgba(0,20,10,.95));box-shadow:0 0 32px rgba(0,212,114,.1),inset 0 0 32px rgba(0,212,114,.04);}
+.verdict-box.v-fold{border-color:rgba(231,76,60,.55);background:linear-gradient(135deg,rgba(35,5,5,.97),rgba(22,0,0,.97));box-shadow:0 0 40px rgba(231,76,60,.15),inset 0 0 40px rgba(231,76,60,.06);}
+.verdict-box.v-margin{border-color:rgba(201,168,76,.45);background:linear-gradient(135deg,rgba(20,15,0,.95),rgba(13,10,0,.95));box-shadow:0 0 28px rgba(201,168,76,.08);}
+.verdict-icon-circle{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;width:68px;height:68px;margin-bottom:10px;}
 .needs-bar{height:14px;border-radius:7px;background:rgba(255,255,255,.06);position:relative;overflow:visible;}
 .needs-fill{height:100%;border-radius:7px;transition:width .6s cubic-bezier(.34,1.56,.64,1);}
 .needs-marker{position:absolute;top:-4px;width:3px;height:22px;border-radius:2px;background:#e74c3c;transition:left .5s ease;box-shadow:0 0 8px rgba(231,76,60,.6);}
@@ -836,34 +908,48 @@ input[type=number]{-moz-appearance:textfield;}
 input.ev-input{width:100%;padding:10px 40px 10px 14px;border-radius:10px;font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;background:rgba(13,35,24,.9);border:1px solid rgba(201,168,76,.25);color:var(--cream);outline:none;transition:border-color .15s;}
 input.ev-input.ev-input-lg{font-size:22px;padding:13px 48px 13px 16px;}
 input.ev-input:focus{border-color:var(--gold);}
-.math-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);font-family:'JetBrains Mono',monospace;font-size:12px;}
-.math-row:last-child{border-bottom:none;}
-/* ── Desktop: tudo na tela sem scroll ── */
+.math-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);font-family:'JetBrains Mono',monospace;font-size:11px;}
+.math-row:last-child{border-bottom:none;padding-top:8px;}
+/* ── Desktop: todos os modos cabem na tela sem scroll ── */
 @media(min-width:601px){
-  #mode-ev{
-    height:calc(100vh - 80px);
+  /* Impede scroll na página — o scroll fica dentro das colunas */
+  main{overflow:hidden;}
+  /* Cada modo ocupa exatamente o espaço disponível entre header e rodapé
+     header≈54px + footer≈34px + padding main top+bottom=32px = 120px */
+  #mode-calc,#mode-compare,#mode-ev{
+    display:flex; /* default: flex; inline style="display:none" do HTML sobrepõe quando oculto */
+    height:calc(100vh - 120px);
     flex-direction:column;
     overflow:hidden;
   }
-  #mode-ev[style*="block"]{
+  /* Quando JS mostra o modo com display:block, força flex */
+  #mode-calc[style*="block"],#mode-compare[style*="block"],#mode-ev[style*="block"]{
     display:flex!important;
   }
+  /* Linha de colunas: cresce e esconde overflow */
+  #mode-calc>.flex.gap-4.cols,
+  #mode-compare>.flex.gap-4.cols,
   #mode-ev>.flex.gap-4.cols{
     flex:1;
     overflow:hidden;
     min-height:0;
   }
+  /* Colunas com scroll interno fino */
+  #mode-calc .left-col,
+  #mode-compare .left-col,
   #mode-ev .left-col{
     overflow-y:auto;
     scrollbar-width:thin;
     scrollbar-color:rgba(201,168,76,.2) transparent;
   }
+  /* Colunas direitas */
+  #mode-calc .flex-1.flex.flex-col.gap-2,
+  #mode-compare .flex-1.flex.flex-col.gap-4,
   #mode-ev .flex-1.flex.flex-col.gap-3{
     overflow-y:auto;
     scrollbar-width:thin;
     scrollbar-color:rgba(201,168,76,.2) transparent;
   }
-
 }
 /* ── Splash Screen ── */
 #splash{
@@ -1003,8 +1089,10 @@ input.ev-input:focus{border-color:var(--gold);}
   color:rgba(201,168,76,.35);transition:all .2s;
 }
 .mob-tab.active{color:var(--gold);}
-.mob-tab-icon{font-size:22px;line-height:1;transition:all .2s;}
-.mob-tab.active .mob-tab-icon{text-shadow:0 0 14px rgba(201,168,76,.7);}
+.mob-tab-icon{font-size:24px;line-height:1;transition:all .2s;}
+.mob-tab.active .mob-tab-icon{text-shadow:0 0 16px rgba(201,168,76,.8);transform:scale(1.1);}
+.mob-tab.active{color:var(--gold);border-top:2px solid var(--gold);}
+.mob-tab:not(.active){border-top:2px solid transparent;}
 /* ── Mobile deck ── */
 #deck-mobile{flex-direction:column;gap:8px;display:none;}
 .deck-suit-row{
@@ -1441,18 +1529,33 @@ input.ev-input:focus{border-color:var(--gold);}
       </div>
     </div>
 
-    <!-- Barra equity vs mínimo -->
-    <div class="glass p-5" id="ev-bar-panel" style="display:none">
-      <div class="flex justify-between items-center mb-4">
-        <span class="stitle">Sua Equity vs Mínimo Necessário</span>
+    <!-- Barra dupla equity vs mínimo -->
+    <div class="glass p-4" id="ev-bar-panel" style="display:none">
+      <div class="flex justify-between items-center mb-3">
+        <span class="stitle">Equity vs Mínimo</span>
         <div id="ev-bar-summary" class="text-xs font-mono"></div>
       </div>
-      <div class="needs-bar" style="height:18px;margin-bottom:24px;border-radius:9px">
-        <div class="needs-fill" id="ev-needs-fill" style="border-radius:9px"></div>
-        <div class="needs-marker" id="ev-needs-marker"></div>
-        <div class="needs-marker-label" id="ev-needs-label"></div>
+      <!-- Track 1: Mínimo Necessário -->
+      <div style="margin-bottom:5px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:rgba(231,76,60,.7);letter-spacing:.06em">MÍNIMO NECESSÁRIO</span>
+          <span id="ev-min-lbl" style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;color:#e74c3c"></span>
+        </div>
+        <div style="height:10px;border-radius:5px;background:rgba(255,255,255,.05);position:relative;overflow:hidden">
+          <div id="ev-min-fill" style="position:absolute;top:0;left:0;height:100%;border-radius:5px;background:linear-gradient(90deg,rgba(231,76,60,.4),rgba(231,76,60,.6));transition:width .6s cubic-bezier(.34,1.56,.64,1)"></div>
+        </div>
       </div>
-      <div class="flex justify-between text-xs font-mono" style="color:rgba(255,255,255,.2)">
+      <!-- Track 2: Sua Equity -->
+      <div style="margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:rgba(255,255,255,.4);letter-spacing:.06em">SUA EQUITY</span>
+          <span id="ev-eq-lbl" style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;color:rgba(255,255,255,.7)"></span>
+        </div>
+        <div style="height:10px;border-radius:5px;background:rgba(255,255,255,.05);position:relative;overflow:hidden">
+          <div class="needs-fill" id="ev-needs-fill" style="border-radius:5px"></div>
+        </div>
+      </div>
+      <div class="flex justify-between text-xs font-mono" style="color:rgba(255,255,255,.15)">
         <span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span>
       </div>
     </div>
@@ -2447,7 +2550,7 @@ function calcEV(){
 
   if(gap > 0.015){
     vBox.className = 'verdict-box v-call';
-    vIcon.textContent = '✓';
+    vIcon.innerHTML = `<span class="verdict-icon-circle" style="background:rgba(0,212,114,.12);border:2px solid rgba(0,212,114,.45);font-size:32px;color:#00d472">✓</span>`;
     vTitle.textContent = 'PODE CHAMAR';
     vTitle.style.color = '#00d472';
     vExpl.innerHTML = `Você precisa ganhar pelo menos <strong style="color:var(--gold)">${reqPct}%</strong> das vezes para esse call valer.<br>
@@ -2455,7 +2558,7 @@ function calcEV(){
       <span style="color:rgba(255,255,255,.45);font-size:13px">A cada 100 vezes nessa situação, você ganha em média <strong style="color:#00d472">${evStr}</strong>.</span>`;
   } else if(gap < -0.015){
     vBox.className = 'verdict-box v-fold';
-    vIcon.textContent = '✗';
+    vIcon.innerHTML = `<span class="verdict-icon-circle" style="background:rgba(231,76,60,.14);border:2px solid rgba(231,76,60,.5);font-size:34px;color:#e74c3c;font-weight:900">✗</span>`;
     vTitle.textContent = 'MELHOR FOLDAR';
     vTitle.style.color = '#e74c3c';
     vExpl.innerHTML = `Você precisaria de pelo menos <strong style="color:var(--gold)">${reqPct}%</strong> de chance para esse call valer.<br>
@@ -2463,7 +2566,7 @@ function calcEV(){
       <span style="color:rgba(255,255,255,.45);font-size:13px">Chamar aqui custaria em média <strong style="color:#e74c3c">${evStr}</strong> por vez.</span>`;
   } else {
     vBox.className = 'verdict-box v-margin';
-    vIcon.textContent = '~';
+    vIcon.innerHTML = `<span class="verdict-icon-circle" style="background:rgba(201,168,76,.1);border:2px solid rgba(201,168,76,.4);font-size:28px;color:var(--gold)">~</span>`;
     vTitle.textContent = 'DECISÃO MARGINAL';
     vTitle.style.color = 'var(--gold)';
     vExpl.innerHTML = `Sua chance (<strong style="color:var(--gold)">${eqPct}%</strong>) está quase igual ao mínimo necessário (<strong style="color:var(--gold)">${reqPct}%</strong>).<br>
@@ -2471,20 +2574,23 @@ function calcEV(){
       <span style="color:rgba(255,255,255,.45);font-size:13px">EV esperado: <strong style="color:var(--gold)">${evStr}</strong> por call.</span>`;
   }
 
-  // ── Barra visual ──
+  // ── Barra dupla visual ──
   document.getElementById('ev-bar-panel').style.display = 'block';
   const fillPct   = Math.min(eqPct, 100);
   const markerPct = Math.min(reqEq * 100, 100);
   const fillColor = gap > 0.015 ? '#00d472' : gap < -0.015 ? '#e74c3c' : 'var(--gold)';
+  // Track sua equity
   document.getElementById('ev-needs-fill').style.width      = fillPct + '%';
   document.getElementById('ev-needs-fill').style.background = fillColor;
-  document.getElementById('ev-needs-marker').style.left     = markerPct + '%';
-  document.getElementById('ev-needs-label').style.left      = markerPct + '%';
-  document.getElementById('ev-needs-label').textContent     = 'mín. ' + reqPct + '%';
+  // Track mínimo
+  document.getElementById('ev-min-fill').style.width        = markerPct + '%';
+  document.getElementById('ev-min-lbl').textContent         = reqPct + '%';
+  document.getElementById('ev-eq-lbl').textContent          = eqPct + '%';
+  document.getElementById('ev-eq-lbl').style.color          = fillColor;
   document.getElementById('ev-bar-summary').innerHTML =
-    `<span style="color:${fillColor};font-weight:700;font-family:'JetBrains Mono',monospace;font-size:11px">${eqPct}% sua equity</span>
-     <span style="color:rgba(255,255,255,.3);font-size:10px;margin:0 6px">vs</span>
-     <span style="color:#e74c3c;font-weight:700;font-family:'JetBrains Mono',monospace;font-size:11px">${reqPct}% mínimo</span>`;
+    `<span style="color:${fillColor};font-weight:700;font-family:'JetBrains Mono',monospace;font-size:11px">${eqPct}%</span>
+     <span style="color:rgba(255,255,255,.25);font-size:10px;margin:0 4px">vs</span>
+     <span style="color:#e74c3c;font-weight:700;font-family:'JetBrains Mono',monospace;font-size:11px">${reqPct}%</span>`;
 
   // ── Math expansível ──
   document.getElementById('ev-math-wrap').style.display = 'block';
@@ -2508,12 +2614,12 @@ function calcEV(){
 
 function resetEVDisplay(){
   const vBox = document.getElementById('ev-verdict');
-  vBox.className = 'verdict-box mb-4';
-  document.getElementById('ev-icon').textContent = '🃏';
-  document.getElementById('ev-icon').style.color = '';
+  vBox.className = 'verdict-box';
+  document.getElementById('ev-icon').innerHTML = '<span style="font-size:48px;line-height:1">🃏</span>';
   document.getElementById('ev-title').textContent = 'Preencha os campos';
   document.getElementById('ev-title').style.color = 'rgba(255,255,255,.4)';
   document.getElementById('ev-explain').textContent = '';
+  document.getElementById('ev-stats-row').style.display = 'none';
   document.getElementById('ev-bar-panel').style.display = 'none';
   document.getElementById('ev-math-wrap').style.display = 'none';
 }
@@ -2652,6 +2758,94 @@ def favicon():
 def apple_touch_icon():
     from flask import Response
     return Response(_FAVICON_180, mimetype='image/png')
+
+# ─── PWA — manifest + service worker + ícones ─────────────
+@app.route('/icon-192.png')
+@app.route('/icon-512.png')
+def pwa_icons():
+    from flask import Response
+    return Response(_FAVICON_180, mimetype='image/png')
+
+@app.route('/manifest.json')
+def pwa_manifest():
+    from flask import Response
+    import json as _json
+    m = {
+        "name": "PokerCalc",
+        "short_name": "PokerCalc",
+        "description": "Calculadora de probabilidades Texas Hold'em — equity, pot odds, confronto de mãos.",
+        "start_url": "/",
+        "scope": "/",
+        "display": "standalone",
+        "background_color": "#071a10",
+        "theme_color": "#071a10",
+        "orientation": "portrait-primary",
+        "lang": "pt-BR",
+        "categories": ["games", "utilities"],
+        "icons": [
+            {"src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png"},
+            {"src": "/icon-192.png",         "sizes": "192x192", "type": "image/png"},
+            {"src": "/icon-512.png",         "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+        ]
+    }
+    return Response(_json.dumps(m), mimetype='application/manifest+json',
+                    headers={'Cache-Control': 'no-cache'})
+
+_SW_JS = """
+const CACHE = 'pokercalc-v1';
+const PRECACHE = ['/'];
+
+// ── Install: pré-cacheia a shell ──
+self.addEventListener('install', e => {
+  e.waitUntil(
+    caches.open(CACHE).then(c => c.addAll(PRECACHE)).then(() => self.skipWaiting())
+  );
+});
+
+// ── Activate: remove caches antigos ──
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    caches.keys()
+      .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
+      .then(() => self.clients.claim())
+  );
+});
+
+// ── Fetch: estratégia híbrida ──
+self.addEventListener('fetch', e => {
+  if (e.request.method !== 'GET') return;
+  const url = new URL(e.request.url);
+  if (url.origin !== location.origin) return;
+
+  // API (cálculos/status): Network First — resultado nunca pode ser stale
+  if (['/calculate', '/compare', '/status'].some(p => url.pathname.startsWith(p))) {
+    e.respondWith(
+      fetch(e.request).catch(() =>
+        new Response(JSON.stringify({error: 'Sem conexão. Tente novamente.'}),
+          {status: 503, headers: {'Content-Type': 'application/json'}})
+      )
+    );
+    return;
+  }
+
+  // HTML shell + assets: Cache First, atualiza em background
+  e.respondWith(
+    caches.match(e.request).then(cached => {
+      const network = fetch(e.request).then(res => {
+        if (res.ok) caches.open(CACHE).then(c => c.put(e.request, res.clone()));
+        return res;
+      });
+      return cached || network;
+    })
+  );
+});
+"""
+
+@app.route('/sw.js')
+def service_worker():
+    from flask import Response
+    return Response(_SW_JS, mimetype='application/javascript',
+                    headers={'Service-Worker-Allowed': '/', 'Cache-Control': 'no-cache, no-store'})
 
 _ERROR_PAGE = """<!DOCTYPE html>
 <html lang="pt-BR">
