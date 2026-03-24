@@ -785,13 +785,11 @@ select{background:rgba(13,35,24,.9);border:1px solid rgba(201,168,76,.25);color:
   /* Fix #7 — botão CALCULAR ODDS: fonte menor no mobile */
   #calc-btn{font-size:15px!important;padding:14px 20px!important;}
 
-  /* Fix #8 — splash: logo circular sem distorção */
+  /* Fix #8 — splash: logo landscape 1500×819 — limita largura sem distorcer */
   .splash-logo img{
-    width:min(190px,50vw)!important;
-    height:min(190px,50vw)!important;
-    aspect-ratio:1/1!important;
-    object-fit:contain!important;
-    max-width:80vw!important;
+    width:min(260px,82vw)!important;
+    height:auto!important;
+    max-width:82vw!important;
   }
   .splash-logo{gap:14px!important;}
   .splash-tag{font-size:10px!important;letter-spacing:.15em!important;margin-top:-4px!important;}
@@ -818,10 +816,9 @@ select{background:rgba(13,35,24,.9);border:1px solid rgba(201,168,76,.25);color:
   #ev-stat-odds,#ev-stat-min,#ev-stat-ev{font-size:13px!important;}
   #ev-pot-lbl,#ev-bet-lbl,#ev-total-lbl{font-size:12px!important;}
   .splash-logo img{
-    width:min(150px,42vw)!important;
-    height:min(150px,42vw)!important;
-    aspect-ratio:1/1!important;
-    object-fit:contain!important;
+    width:min(180px,72vw)!important;
+    height:auto!important;
+    max-width:72vw!important;
   }
   .splash-logo{gap:10px!important;}
   .splash-tag{font-size:9px!important;}
@@ -1093,6 +1090,12 @@ input.ev-input:focus{border-color:var(--gold);}
 .mob-tab.active .mob-tab-icon{text-shadow:0 0 16px rgba(201,168,76,.8);transform:scale(1.1);}
 .mob-tab.active{color:var(--gold);border-top:2px solid var(--gold);}
 .mob-tab:not(.active){border-top:2px solid transparent;}
+.btn-clear-danger{color:rgba(255,255,255,.3);background:none;border:none;cursor:pointer;font-family:'Rajdhani',sans-serif;letter-spacing:.05em;transition:color .15s;}
+.btn-clear-danger:hover{color:#e74c3c!important;}
+.btn-import-gold{transition:background .2s,box-shadow .2s;}
+.btn-import-gold:hover{background:rgba(201,168,76,.18)!important;box-shadow:var(--glow-gold)!important;}
+.hdr-link{display:inline-flex;align-items:center;opacity:.55;text-decoration:none;transition:opacity .2s;}
+.hdr-link:hover{opacity:.9!important;}
 /* ── Mobile deck ── */
 #deck-mobile{flex-direction:column;gap:8px;display:none;}
 .deck-suit-row{
@@ -1163,9 +1166,9 @@ input.ev-input:focus{border-color:var(--gold);}
     </div>
     <span id="sim-counter" class="sim-info text-xs font-mono" style="color:var(--gold-dim)">— simulações</span>
     <span id="moe-badge" style="display:none;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);border-radius:6px;padding:2px 8px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gold-dim)">±—%</span>
-    <a href="mailto:pokercalc.suporte@gmail.com" class="sim-info" style="display:inline-flex;align-items:center;opacity:.55;text-decoration:none;transition:opacity .2s;" title="Suporte" onmouseover="this.style.opacity='.9'" onmouseout="this.style.opacity='.55'"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c9a84c" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg></a>
-    <a href="https://instagram.com/SEU_USUARIO" target="_blank" class="sim-info" style="display:inline-flex;align-items:center;opacity:.55;text-decoration:none;transition:opacity .2s;" title="Instagram" onmouseover="this.style.opacity='.9'" onmouseout="this.style.opacity='.55'"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c9a84c" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1" fill="#c9a84c" stroke="none"/></svg></a>
-    <a href="https://tiktok.com/@SEU_USUARIO" target="_blank" class="sim-info" style="display:inline-flex;align-items:center;opacity:.55;text-decoration:none;transition:opacity .2s;" title="TikTok" onmouseover="this.style.opacity='.9'" onmouseout="this.style.opacity='.55'"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c9a84c" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/></svg></a>
+    <a href="mailto:pokercalc.suporte@gmail.com" class="sim-info hdr-link" title="Suporte"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c9a84c" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg></a>
+    <a href="https://instagram.com/SEU_USUARIO" target="_blank" class="sim-info hdr-link" title="Instagram"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c9a84c" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1" fill="#c9a84c" stroke="none"/></svg></a>
+    <a href="https://tiktok.com/@SEU_USUARIO" target="_blank" class="sim-info hdr-link" title="TikTok"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c9a84c" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/></svg></a>
   </div>
 </header>
 
@@ -1335,7 +1338,7 @@ input.ev-input:focus{border-color:var(--gold);}
           <p class="stitle">Board (opcional)</p>
           <div class="flex gap-2 items-center">
             <span id="cmp-street-badge" class="text-xs px-2 py-0.5 rounded font-semibold" style="background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.2);color:var(--gold);letter-spacing:.1em">PRÉ-FLOP</span>
-            <button onclick="clearCmpBoard()" class="text-xs" style="color:rgba(255,255,255,.3);background:none;border:none;cursor:pointer;font-family:'Rajdhani',sans-serif;letter-spacing:.05em;" onmouseover="this.style.color='#e74c3c'" onmouseout="this.style.color='rgba(255,255,255,.3)'">limpar</button>
+            <button onclick="clearCmpBoard()" class="text-xs btn-clear-danger">limpar</button>
           </div>
         </div>
         <div class="flex gap-2 flex-wrap" id="cmp-board-slots"></div>
@@ -1453,10 +1456,8 @@ input.ev-input:focus{border-color:var(--gold);}
           <input id="ev-equity" type="number" class="ev-input ev-input-lg" min="1" max="99" step="0.5" value="35" oninput="calcEV()"/>
           <span class="ev-field-unit" style="font-size:14px">%</span>
         </div>
-        <button onclick="importEquity()" id="import-btn"
-          style="width:100%;padding:12px;border-radius:10px;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:13px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;border:1.5px solid rgba(201,168,76,.4);background:rgba(201,168,76,.08);color:var(--gold);transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;"
-          onmouseover="this.style.background='rgba(201,168,76,.18)';this.style.boxShadow='var(--glow-gold)'"
-          onmouseout="this.style.background='rgba(201,168,76,.08)';this.style.boxShadow='none'">
+        <button onclick="importEquity()" id="import-btn" class="btn-import-gold"
+          style="width:100%;padding:12px;border-radius:10px;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:13px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;border:1.5px solid rgba(201,168,76,.4);background:rgba(201,168,76,.08);color:var(--gold);display:flex;align-items:center;justify-content:center;gap:8px;">
           <span style="font-size:16px">↑</span> IMPORTAR DA CALCULADORA
         </button>
         <p id="import-hint" class="text-xs mt-2" style="color:rgba(255,255,255,.25);line-height:1.5">
@@ -1928,7 +1929,7 @@ function renderCalcTable(winPct){
 
 // ── POLLING ──
 async function pollJob(jid, onProg, onDone, onErr, onPartial, retryFn){
-  let attempts = 0;
+  let attempts = 0, netErrors = 0;
   const iv=setInterval(async()=>{
     attempts++;
     if(attempts > 1200){ clearInterval(iv); onErr('Tempo esgotado.'); return; }
@@ -1946,14 +1947,15 @@ async function pollJob(jid, onProg, onDone, onErr, onPartial, retryFn){
       }
       if(r.status===429){ clearInterval(iv); onErr('Muitas requisições. Aguarde e tente novamente.'); return; }
       const j=await r.json();
+      netErrors = 0;
       if(j.error && !j.status){ clearInterval(iv); onErr(j.error); return; }
       if(j.progress !== undefined) onProg(j.progress);
-      // Resultado parcial disponível — mostra imediatamente
       if(j.partial && onPartial) onPartial(j.partial);
       if(j.status==='done'){ clearInterval(iv); onDone(j.result); }
       if(j.status==='error'){ clearInterval(iv); onErr(j.error||'Erro no cálculo.'); }
     }catch(e){
-      if(attempts > 20){ clearInterval(iv); onErr('Erro de conexão.'); }
+      netErrors++;
+      if(netErrors >= 5){ clearInterval(iv); onErr('Erro de conexão. Verifique sua internet.'); }
     }
   },250);
 }
@@ -2438,10 +2440,11 @@ function setLoading(m,on){
   else{document.getElementById('cmp-txt').textContent=on?'CALCULANDO...':'CALCULAR CONFRONTO';document.getElementById('cmp-loader').style.display=on?'block':'none';document.getElementById('cmp-btn').disabled=on;}
 }
 function flash(msg, type='error'){
+  document.querySelectorAll('.flash-toast').forEach(e=>e.remove());
   const bg = type==='info' ? 'rgba(201,168,76,.95)' : 'rgba(231,76,60,.9)';
   const fg = type==='info' ? '#0d2318' : 'white';
   const dur = type==='info' ? 4000 : 3000;
-  const el=document.createElement('div');el.textContent=msg;
+  const el=document.createElement('div');el.className='flash-toast';el.textContent=msg;
   el.style.cssText=`position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:${bg};color:${fg};padding:9px 22px;border-radius:8px;font-family:Rajdhani,sans-serif;font-size:14px;z-index:9999;letter-spacing:.05em;box-shadow:0 4px 16px rgba(0,0,0,.4);max-width:calc(100vw - 32px);text-align:center;white-space:normal;word-break:break-word;`;
   document.body.appendChild(el);setTimeout(()=>el.remove(),dur);
 }
@@ -2525,7 +2528,7 @@ function calcEV(){
 
   // ── Stats row ──
   const statsRow = document.getElementById('ev-stats-row');
-  if(statsRow){ statsRow.style.display='grid'; statsRow.style.removeProperty('display'); statsRow.style.display='grid'; }
+  if(statsRow){ statsRow.style.setProperty('display','grid','important'); }
   const statOdds = document.getElementById('ev-stat-odds');
   const statMin  = document.getElementById('ev-stat-min');
   const statEV   = document.getElementById('ev-stat-ev');
@@ -2724,6 +2727,47 @@ document.addEventListener('touchmove', ()=>{
     b.style.display='none'; b.classList.remove('touch-open');
   });
 },{passive:true});
+</script>
+
+<!-- Botão instalar PWA -->
+<button id="pwa-install-btn" onclick="installPWA()">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0">
+    <path d="M12 3v13M7 11l5 5 5-5M3 19h18"/>
+  </svg>
+  Instalar App
+</button>
+
+<script>
+// ── Service Worker ──
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js', {scope:'/'})
+      .then(r => console.log('[SW] registrado, scope:', r.scope))
+      .catch(e => console.warn('[SW] registro falhou:', e));
+  });
+}
+// ── Install Prompt (A2HS) ──
+let _deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  _deferredPrompt = e;
+  const btn = document.getElementById('pwa-install-btn');
+  if(btn) btn.style.display = 'flex';
+});
+window.addEventListener('appinstalled', () => {
+  _deferredPrompt = null;
+  const btn = document.getElementById('pwa-install-btn');
+  if(btn) btn.style.display = 'none';
+});
+function installPWA(){
+  if(!_deferredPrompt) return;
+  _deferredPrompt.prompt();
+  _deferredPrompt.userChoice.then(() => {
+    _deferredPrompt = null;
+    const btn = document.getElementById('pwa-install-btn');
+    if(btn) btn.style.display = 'none';
+  });
+}
 </script>
 </body>
 </html>"""
