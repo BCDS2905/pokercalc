@@ -656,7 +656,8 @@ select{background:rgba(13,35,24,.9);border:1px solid rgba(201,168,76,.25);color:
 @media(max-width:860px){
   .cols{flex-direction:column!important;}
   .left-col{width:100%!important;}
-  .hdr-right .sim-info{display:none;}
+  .hdr-right .sim-info.hdr-link{display:inline-flex;}
+  .hdr-right .sim-info:not(.hdr-link){display:none;}
   .gauge{width:100px!important;height:100px!important;}
   .g-svg{width:100px!important;height:100px!important;}
   .g-pct{font-size:18px!important;}
@@ -664,9 +665,61 @@ select{background:rgba(13,35,24,.9);border:1px solid rgba(201,168,76,.25);color:
   main{padding:8px!important;}
   .glass{border-radius:10px;}
   .logo-sub{display:none;}
-  .hdr-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;max-width:70vw;}
+  /* Header tablet: logo(img) + abas + ícones — tudo em 1 linha */
+  header{padding:8px 12px!important;gap:8px!important;}
+  .logo{display:none!important;}
+  .logo-img{width:32px!important;height:32px!important;}
+  .hdr-right{gap:6px!important;align-items:center!important;}
+  .hdr-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
   .hdr-tabs::-webkit-scrollbar{display:none;}
-  .mode-tab{padding:6px 12px!important;font-size:11px!important;letter-spacing:.06em!important;white-space:nowrap;}
+  .mode-tab{padding:5px 10px!important;font-size:10px!important;letter-spacing:.05em!important;white-space:nowrap;}
+  /* Slots centralizados como no mobile */
+  #hole-slots,#board-slots{justify-content:center!important;}
+  /* Esconder mesa e gauges de equity (mostrados na sticky bar) */
+  #calc-table-panel{display:none!important;}
+  #calc-equity-panel{display:none!important;}
+  #mode-calc > .cols > .flex-1{gap:6px!important;}
+  /* Esconder deck inline (usa bottom sheet como no mobile) */
+  #deck-grid-wrap-desktop{display:none!important;}
+  #mode-calc .left-col > .glass:nth-child(2){display:none!important;}
+  /* Sticky equity bar */
+  #sticky-equity{
+    display:flex!important;
+    position:fixed!important;bottom:68px!important;left:0!important;right:0!important;
+    z-index:999!important;
+    background:rgba(7,20,12,.96)!important;
+    border-top:1px solid rgba(201,168,76,.15)!important;
+    border-bottom:1px solid rgba(201,168,76,.15)!important;
+    backdrop-filter:blur(12px)!important;-webkit-backdrop-filter:blur(12px)!important;
+    padding:6px 12px!important;
+    justify-content:space-around!important;align-items:center!important;
+  }
+  /* Bottom nav */
+  #mobile-bottom-nav{display:flex!important;}
+  body{padding-bottom:calc(68px + 40px)!important;}
+  /* Esconder abas do header (redundante com bottom nav) */
+  .hdr-tabs{display:none!important;}
+  /* Deck bottom sheet */
+  #deck-bottom-sheet{
+    display:block!important;
+    position:fixed!important;bottom:0!important;left:0!important;right:0!important;
+    z-index:1001!important;
+    background:rgba(7,20,12,.98)!important;
+    border-top:2px solid rgba(201,168,76,.3)!important;
+    border-radius:16px 16px 0 0!important;
+    max-height:55vh!important;
+    transform:translateY(100%)!important;
+    transition:transform .3s cubic-bezier(.4,0,.2,1)!important;
+    padding:0 0 calc(68px + env(safe-area-inset-bottom,0px))!important;
+    overflow-y:auto!important;
+  }
+  #deck-bottom-sheet.open{transform:translateY(0)!important;}
+  #deck-sheet-backdrop{
+    display:none!important;position:fixed!important;inset:0!important;z-index:1000!important;
+    background:rgba(0,0,0,.5)!important;
+    transition:opacity .3s!important;opacity:0!important;
+  }
+  #deck-sheet-backdrop.open{display:block!important;opacity:1!important;}
 }
 
 /* ════════════════════════════════════════
@@ -676,10 +729,14 @@ select{background:rgba(13,35,24,.9);border:1px solid rgba(201,168,76,.25);color:
   /* Espaço para bottom nav */
   body{padding-bottom:68px!important;}
 
-  /* Header: só logo */
-  header{padding:10px 16px!important;}
-  .hdr-right{display:none!important;}
-  .logo{font-size:18px!important;}
+  /* Header mobile: logo à esquerda, ícones à direita */
+  header{padding:8px 12px!important;}
+  .hdr-right{display:flex!important;gap:12px!important;align-items:center!important;}
+  .hdr-right .hdr-tabs{display:none!important;}
+  .hdr-right .mode-btn{display:none!important;}
+  .hdr-right .hdr-link svg{width:18px!important;height:18px!important;}
+  .logo{font-size:15px!important;letter-spacing:.12em!important;}
+  .logo-img{width:28px!important;height:28px!important;}
 
   /* Bottom nav visível */
   #mobile-bottom-nav{display:flex!important;}
@@ -742,8 +799,11 @@ select{background:rgba(13,35,24,.9);border:1px solid rgba(201,168,76,.25);color:
   #moe-badge{display:none!important;}
   .logo-sub{display:none!important;}
 
-  /* ── HIDE mesa + equity + draws + winning cards no mobile (mostrados na sticky bar) ── */
-  #mode-calc > .cols > .flex-1{display:none!important;}
+  /* ── HIDE mesa + equity gauges no mobile (equity na sticky bar) ── */
+  #calc-table-panel{display:none!important;}
+  #calc-equity-panel{display:none!important;}
+  /* Painel direito: visível mas sem gap excessivo */
+  #mode-calc > .cols > .flex-1{gap:6px!important;}
 
   /* ── HIDE deck inline no mobile (agora é bottom sheet) ── */
   #mode-calc .left-col > .glass:nth-child(2){display:none!important;}
@@ -1271,8 +1331,8 @@ input.ev-input:focus{border-color:var(--gold);}
     <span id="sim-counter" class="sim-info text-xs font-mono" style="color:var(--gold-dim)">— simulações</span>
     <span id="moe-badge" style="display:none;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);border-radius:6px;padding:2px 8px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gold-dim)">±—%</span>
     <a href="mailto:pokercalc.suporte@gmail.com" class="sim-info hdr-link" title="Suporte"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c9a84c" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg></a>
-    <a href="https://instagram.com/SEU_USUARIO" target="_blank" class="sim-info hdr-link" title="Instagram"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c9a84c" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1" fill="#c9a84c" stroke="none"/></svg></a>
-    <a href="https://tiktok.com/@SEU_USUARIO" target="_blank" class="sim-info hdr-link" title="TikTok"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c9a84c" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/></svg></a>
+    <a href="https://instagram.com/pokercalc" target="_blank" class="sim-info hdr-link" title="Instagram"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c9a84c" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1" fill="#c9a84c" stroke="none"/></svg></a>
+    <a href="https://tiktok.com/@pokercalc" target="_blank" class="sim-info hdr-link" title="TikTok"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c9a84c" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/></svg></a>
   </div>
 </header>
 
@@ -1345,12 +1405,12 @@ input.ev-input:focus{border-color:var(--gold);}
   </div>
   <div class="flex-1 flex flex-col gap-2">
     <!-- MESA DA CALCULADORA -->
-    <div class="glass overflow-hidden">
+    <div class="glass overflow-hidden" id="calc-table-panel">
       <div class="poker-table-wrap">
         <div class="poker-table-inner" id="calc-poker-table"></div>
       </div>
     </div>
-    <div class="glass p-3">
+    <div class="glass p-3" id="calc-equity-panel">
       <div class="flex items-center justify-between mb-2">
         <div class="flex items-center gap-1">
           <p class="stitle">Win Equity</p>
@@ -1677,6 +1737,11 @@ input.ev-input:focus{border-color:var(--gold);}
 
 </main>
 <footer class="text-center py-3 text-xs font-mono" style="color:rgba(201,168,76,.2);border-top:1px solid rgba(201,168,76,.07)">
+  <div class="mobile-contact-icons" style="display:none;justify-content:center;gap:16px;margin-bottom:8px;">
+    <a href="mailto:pokercalc.suporte@gmail.com" title="Suporte" style="color:rgba(201,168,76,.5);transition:color .2s"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg></a>
+    <a href="https://instagram.com/pokercalc" target="_blank" title="Instagram" style="color:rgba(201,168,76,.5);transition:color .2s"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></a>
+    <a href="https://tiktok.com/@pokercalc" target="_blank" title="TikTok" style="color:rgba(201,168,76,.5);transition:color .2s"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/></svg></a>
+  </div>
   POKERCALC · Monte Carlo Engine · Texas Hold'em
   <span style="margin:0 8px;opacity:.4">·</span>
   <a href="/privacidade" style="color:rgba(201,168,76,.35);text-decoration:none;transition:color .2s" onmouseover="this.style.color='rgba(201,168,76,.8)'" onmouseout="this.style.color='rgba(201,168,76,.35)'">Privacidade</a>
@@ -1723,7 +1788,7 @@ function switchMode(m){
   if(mt) mt.classList.add('active');
   // Sticky equity bar only shows on calc mode
   const seq=document.getElementById('sticky-equity');
-  if(seq&&isMobile()) seq.style.display=m==='calc'?'flex':'none';
+  if(seq&&isCompact()) seq.style.display=m==='calc'?'flex':'none';
 }
 
 // ── MOBILE: bottom nav e deck por naipe ──────────────
@@ -1731,6 +1796,7 @@ const SUIT_LABEL_MAP={s:'♠',h:'♥',d:'♦',c:'♣'};
 const SUIT_COLOR_MAP={s:'#9ca3af',h:'var(--red-suit)',d:'var(--red-suit)',c:'#9ca3af'};
 
 function isMobile(){return window.innerWidth<=600;}
+function isCompact(){return window.innerWidth<=860;}
 
 function buildMobileDeck(){
   const mob=document.getElementById('deck-mobile');
@@ -1765,7 +1831,7 @@ function buildMobileDeck(){
 
 // ── DECK BOTTOM SHEET (mobile) ──
 function openDeckSheet(){
-  if(!isMobile()) return;
+  if(!isCompact()) return;
   const sheet=document.getElementById('deck-bottom-sheet');
   const backdrop=document.getElementById('deck-sheet-backdrop');
   if(!sheet||!backdrop) return;
@@ -1818,7 +1884,7 @@ function buildSheetDeck(){
 
 // ── STICKY EQUITY BAR sync ──
 function syncStickyEquity(){
-  if(!isMobile()) return;
+  if(!isCompact()) return;
   const sw=document.getElementById('seq-win');
   const st=document.getElementById('seq-tie');
   const sl=document.getElementById('seq-lose');
@@ -1848,8 +1914,9 @@ function applyLayout(){
   if(mobile){ buildMobileDeck(); buildCmpMobileDeck(); }
   else{ buildDeck(); buildCmpDeck(); }
   // Sticky equity bar visibility
+  const compact=isCompact();
   const seq=document.getElementById('sticky-equity');
-  if(seq) seq.style.display=mobile?'flex':'none';
+  if(seq) seq.style.display=compact?'flex':'none';
 }
 window.addEventListener('resize',applyLayout);
 
@@ -1904,7 +1971,7 @@ function buildDeck(){
   }
 }
 let _userTappedSlot=false;
-function activateCalcSlot(type,idx){calcSlot={type,index:idx};renderCalcSlots();if(isMobile()&&_userTappedSlot)openDeckSheet();_userTappedSlot=false;}
+function activateCalcSlot(type,idx){calcSlot={type,index:idx};renderCalcSlots();if(isCompact()&&_userTappedSlot)openDeckSheet();_userTappedSlot=false;}
 function calcPick(c){
   const used=[...hole,...board].filter(Boolean);if(used.includes(c))return;
   const{type,index}=calcSlot;
