@@ -678,10 +678,12 @@ select{background:rgba(13,35,24,.9);border:1px solid rgba(201,168,76,.25);color:
   /* Esconder mesa e gauges de equity (mostrados na sticky bar) */
   #calc-table-panel{display:none!important;}
   #calc-equity-panel{display:none!important;}
+  #cmp-hint{display:none!important;}
   #mode-calc > .cols > .flex-1{gap:6px!important;}
-  /* Esconder deck inline (usa bottom sheet como no mobile) */
+  /* Esconder deck inline - calc e confronto (usa bottom sheet) */
   #deck-grid-wrap-desktop{display:none!important;}
   #mode-calc .left-col > .glass:nth-child(2){display:none!important;}
+  #mode-compare .left-col > .glass:nth-child(2){display:none!important;}
   /* Sticky equity bar */
   #sticky-equity{
     display:flex!important;
@@ -802,6 +804,7 @@ select{background:rgba(13,35,24,.9);border:1px solid rgba(201,168,76,.25);color:
   /* ── HIDE mesa + equity gauges no mobile (equity na sticky bar) ── */
   #calc-table-panel{display:none!important;}
   #calc-equity-panel{display:none!important;}
+  #cmp-hint{display:none!important;}
   /* Painel direito: visível mas sem gap excessivo */
   #mode-calc > .cols > .flex-1{gap:6px!important;}
 
@@ -893,7 +896,7 @@ select{background:rgba(13,35,24,.9);border:1px solid rgba(201,168,76,.25);color:
   #mode-compare .cols{display:flex!important;flex-direction:column!important;}
   #mode-compare .left-col{display:contents!important;}
   #mode-compare .left-col > .glass:nth-child(1){order:1;}
-  #mode-compare .left-col > .glass:nth-child(2){order:3;}
+  #mode-compare .left-col > .glass:nth-child(2){display:none!important;}
   #mode-compare .cols > .flex-1{order:2;}
 
   /* Vale a Pena? — mobile */
@@ -1830,7 +1833,9 @@ function buildMobileDeck(){
 }
 
 // ── DECK BOTTOM SHEET (mobile) ──
-function openDeckSheet(){
+let _sheetMode='calc'; // 'calc' ou 'cmp'
+function openDeckSheet(mode){
+  _sheetMode=mode||'calc';
   if(!isCompact()) return;
   const sheet=document.getElementById('deck-bottom-sheet');
   const backdrop=document.getElementById('deck-sheet-backdrop');
@@ -1856,7 +1861,14 @@ function closeDeckSheet(){
 function buildSheetDeck(){
   const body=document.getElementById('deck-sheet-body');
   if(!body) return;
-  const used=[...hole,...board].filter(Boolean);
+  let used;
+  if(_sheetMode==='cmp'){
+    const usedHands=cmpHands.slice(0,cmpN).flat().filter(Boolean);
+    const usedBoard=cmpBoard.filter(Boolean);
+    used=[...usedHands,...usedBoard];
+  }else{
+    used=[...hole,...board].filter(Boolean);
+  }
   body.innerHTML='';
   for(const s of SUITS){
     const row=document.createElement('div');
@@ -1874,7 +1886,11 @@ function buildSheetDeck(){
       el.className=`playing-card ${red?'red-card':'black-card'}`;
       if(used.includes(c))el.classList.add('used');
       el.innerHTML=`<span class="card-rank">${dr}</span><span class="card-suit">${ds}</span>`;
-      el.onclick=()=>{calcPick(c);const anyEmpty=[...hole,...board].some(x=>!x);if(anyEmpty)buildSheetDeck();else closeDeckSheet();};
+      if(_sheetMode==='cmp'){
+        el.onclick=()=>{cmpPick(c);const allDone=cmpHands.slice(0,cmpN).every(h=>h[0]&&h[1])&&!cmpBoardActive;if(allDone)closeDeckSheet();else buildSheetDeck();};
+      }else{
+        el.onclick=()=>{calcPick(c);const anyEmpty=[...hole,...board].some(x=>!x);if(anyEmpty)buildSheetDeck();else closeDeckSheet();};
+      }
       cardsRow.appendChild(el);
     }
     row.appendChild(cardsRow);
@@ -2339,7 +2355,7 @@ function resetCalc(){
 
 // ── COMPARE ──
 function chgPlayers(d){cmpN=Math.max(2,Math.min(8,cmpN+d));document.getElementById('nhd').textContent=cmpN;if(cmpActive>=cmpN)cmpActive=0;renderPlayers();buildCmpDeck();}
-function selectPlayer(i){cmpActive=i;renderPlayers();buildCmpDeck();}
+function selectPlayer(i){cmpActive=i;cmpBoardActive=false;renderPlayers();buildCmpDeck();if(isCompact()&&!cmpHands[i].every(Boolean))openDeckSheet('cmp');}
 function renderPlayers(){
   const cont=document.getElementById('players-list');cont.innerHTML='';
   for(let i=0;i<cmpN;i++){
@@ -2355,7 +2371,7 @@ function renderPlayers(){
       if(c){
         const{r,s,red}=lbl(c);sl.style.background='var(--card-bg)';sl.style.border='2px solid rgba(201,168,76,.5)';sl.style.boxShadow='0 3px 10px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.8)';
         sl.innerHTML=`<span style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:13px;line-height:1;color:${red?'var(--red-suit)':'#1a1a1a'}">${r}</span><span style="font-size:13px;line-height:1;color:${red?'var(--red-suit)':'#1a1a1a'}">${s}</span>`;
-        sl.onclick=e=>{e.stopPropagation();cmpHands[i][ci]=null;selectPlayer(i);};sl.title='Clique para remover';
+        sl.onclick=e=>{e.stopPropagation();cmpHands[i][ci]=null;selectPlayer(i);if(isCompact())openDeckSheet('cmp');};sl.title='Clique para remover';
       }else{
         sl.style.background='rgba(13,35,24,.6)';sl.style.border=isAct?'2px solid var(--gold)':'2px dashed rgba(201,168,76,.3)';
         if(isAct)sl.style.animation='pulse-slot 1.5s ease infinite';
@@ -2561,14 +2577,14 @@ function renderCmpBoardSlots(){
       sl.className=`slot filled ${red?'red-card':'black-card'}`;
       sl.style.width='50px'; sl.style.height='70px';
       sl.innerHTML=`<span class="slot-rank">${r}</span><span class="slot-suit">${s}</span>`;
-      sl.onclick=()=>{ cmpBoard[i]=null; cmpBoardActive=true; renderCmpBoardSlots(); buildCmpDeck(); updateCmpStreet(); };
+      sl.onclick=()=>{ cmpBoard[i]=null; cmpBoardActive=true; renderCmpBoardSlots(); buildCmpDeck(); updateCmpStreet(); if(isCompact())openDeckSheet('cmp'); };
       sl.title='Clique para remover';
     } else {
       const isAct=cmpBoardActive && cmpBoard.indexOf(null)===i;
       sl.className='slot'+(isAct?' active':'');
       sl.style.width='50px'; sl.style.height='70px';
       sl.innerHTML=`<span style="color:rgba(201,168,76,.35);font-size:9px;letter-spacing:.1em">${lbls[i]}</span>`;
-      sl.onclick=()=>{ cmpBoardActive=true; renderCmpBoardSlots(); buildCmpDeck(); };
+      sl.onclick=()=>{ cmpBoardActive=true; renderCmpBoardSlots(); buildCmpDeck(); if(isCompact())openDeckSheet('cmp'); };
     }
     cont.appendChild(sl);
   });
