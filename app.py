@@ -654,6 +654,7 @@ select{background:rgba(13,35,24,.9);border:1px solid rgba(201,168,76,.25);color:
    TABLET — 860px
 ════════════════════════════════════════ */
 @media(max-width:860px){
+  #faq-fab{bottom:calc(68px + 16px)!important;}
   .cols{flex-direction:column!important;}
   .left-col{width:100%!important;}
   .hdr-right .sim-info.hdr-link{display:inline-flex;}
@@ -728,6 +729,8 @@ select{background:rgba(13,35,24,.9);border:1px solid rgba(201,168,76,.25);color:
    MOBILE — 600px  (redesign completo)
 ════════════════════════════════════════ */
 @media(max-width:600px){
+  /* FAQ FAB acima do bottom nav */
+  #faq-fab{bottom:calc(68px + 16px)!important;right:16px!important;}
   /* Espaço para bottom nav */
   body{padding-bottom:68px!important;}
 
@@ -939,7 +942,6 @@ select{background:rgba(13,35,24,.9);border:1px solid rgba(201,168,76,.25);color:
   .splash-msg{font-size:11px!important;}
 
   /* Fix #9 — tooltip: largura máxima = viewport - margens */
-  .tip-box{width:min(220px,calc(100vw - 32px))!important;}
 }
 
 /* ════════════════════════════════════════
@@ -1018,19 +1020,39 @@ select{background:rgba(13,35,24,.9);border:1px solid rgba(201,168,76,.25);color:
 #pwa-install-btn:hover{transform:translateY(-2px);box-shadow:0 6px 28px rgba(201,168,76,.55);}
 #pwa-install-btn svg{width:16px;height:16px;flex-shrink:0;}
 
-/* ── Tooltip ── */
-.tip-wrap{position:relative;display:inline-flex;align-items:center;cursor:help;}
-.tip-icon{width:14px;height:14px;border-radius:50%;background:rgba(201,168,76,.2);border:1px solid rgba(201,168,76,.35);color:var(--gold);font-size:9px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;margin-left:5px;flex-shrink:0;font-family:'JetBrains Mono',monospace;transition:background .15s;}
-.tip-wrap:hover .tip-icon{background:rgba(201,168,76,.4);}
-.tip-box{display:none;position:absolute;left:50%;transform:translateX(-50%);bottom:calc(100% + 8px);width:220px;background:rgba(7,20,12,.97);border:1px solid rgba(201,168,76,.3);border-radius:8px;padding:10px 12px;font-family:'Rajdhani',sans-serif;font-size:12px;line-height:1.5;color:rgba(255,255,255,.75);z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,.6);pointer-events:none;}
-.tip-box::after{content:'';position:absolute;left:50%;transform:translateX(-50%);top:100%;border:5px solid transparent;border-top-color:rgba(201,168,76,.3);}
-.tip-wrap:hover .tip-box{display:block;}
-.tip-right .tip-box{left:auto;right:0;transform:none;}
-.tip-right .tip-box::after{left:auto;right:12px;transform:none;}
-/* tooltip abrindo para baixo (para elementos no topo da página) */
-.tip-down .tip-box{bottom:auto;top:calc(100% + 8px);}
-.tip-down .tip-box::after{top:auto;bottom:100%;border-top-color:transparent;border-bottom-color:rgba(201,168,76,.3);}
-.tip-down.tip-right .tip-box{left:auto;right:0;transform:none;}
+/* ── FAQ Bottom Sheet ── */
+#faq-fab{position:fixed;bottom:24px;right:20px;width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#c9a84c,#b8943f);color:#07140c;border:none;font-family:'Rajdhani',sans-serif;font-size:30px;font-weight:700;cursor:pointer;z-index:1001;box-shadow:0 4px 16px rgba(201,168,76,.35);transition:transform .2s,box-shadow .2s;display:flex;align-items:center;justify-content:center;}
+#faq-fab:hover{transform:scale(1.1);box-shadow:0 6px 24px rgba(201,168,76,.5);}
+#faq-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:2000;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);transition:opacity .3s;}
+#faq-sheet{position:fixed;bottom:0;left:0;right:0;max-height:82vh;z-index:2001;background:rgba(7,20,12,.98);border-top:2px solid rgba(201,168,76,.4);border-radius:16px 16px 0 0;overflow-y:auto;transform:translateY(100%);transition:transform .35s cubic-bezier(.32,1,.23,1);padding-bottom:env(safe-area-inset-bottom,0px);}
+#faq-sheet.faq-open{transform:translateY(0);}
+#faq-sheet::-webkit-scrollbar{width:4px;}
+#faq-sheet::-webkit-scrollbar-thumb{background:rgba(201,168,76,.3);border-radius:2px;}
+.faq-handle{width:36px;height:4px;border-radius:2px;background:rgba(255,255,255,.15);margin:10px auto 0;}
+.faq-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px 12px;border-bottom:1px solid rgba(201,168,76,.15);}
+.faq-header h2{font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:var(--gold);letter-spacing:1px;text-transform:uppercase;margin:0;}
+.faq-close{background:none;border:none;color:rgba(255,255,255,.5);font-size:22px;cursor:pointer;padding:4px 8px;transition:color .2s;}
+.faq-close:hover{color:#fff;}
+.faq-body{padding:8px 0 20px;}
+.faq-cat{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;cursor:pointer;border-bottom:1px solid rgba(201,168,76,.08);transition:background .2s;}
+.faq-cat:hover{background:rgba(201,168,76,.06);}
+.faq-cat-title{font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:600;color:var(--gold);letter-spacing:.5px;}
+.faq-chevron{color:rgba(201,168,76,.5);font-size:12px;transition:transform .3s;display:inline-block;}
+.faq-cat.faq-expanded .faq-chevron{transform:rotate(180deg);}
+.faq-cat-items{max-height:0;overflow:hidden;transition:max-height .35s ease;}
+.faq-item{display:flex;align-items:center;justify-content:space-between;padding:12px 20px 12px 32px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.04);transition:background .2s;border-left:3px solid transparent;}
+.faq-item:hover{background:rgba(201,168,76,.04);border-left-color:rgba(201,168,76,.3);}
+.faq-item.faq-item-open{border-left-color:var(--gold);background:rgba(201,168,76,.06);}
+.faq-item-title{font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:500;color:rgba(255,255,255,.85);}
+.faq-item .faq-chevron{font-size:10px;}
+.faq-item.faq-item-open .faq-chevron{transform:rotate(180deg);}
+.faq-answer{max-height:0;overflow:hidden;transition:max-height .35s ease;padding:0 20px 0 35px;}
+.faq-answer-inner{padding:8px 0 16px;color:rgba(255,255,255,.7);font-family:'Rajdhani',sans-serif;font-size:13px;line-height:1.7;}
+.faq-answer-inner strong{color:var(--gold);font-weight:600;}
+.faq-answer-inner ul{margin:6px 0;padding-left:18px;}
+.faq-answer-inner li{margin-bottom:4px;}
+.faq-answer-inner .faq-hand-list{display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;margin:8px 0;}
+.faq-answer-inner .faq-term{color:var(--gold);font-weight:600;}
 
 /* ── Quick Hands ── */
 .qh-btn{padding:4px 9px;border-radius:6px;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:11px;letter-spacing:.06em;cursor:pointer;border:1px solid rgba(201,168,76,.2);background:rgba(13,35,24,.8);color:rgba(201,168,76,.7);transition:all .15s;white-space:nowrap;}
@@ -1288,6 +1310,182 @@ input.ev-input:focus{border-color:var(--gold);}
     <p class="splash-msg">Carregando...</p>
   </div>
 </div>
+<!-- FAQ Button + Bottom Sheet -->
+<button id="faq-fab" onclick="toggleFAQ()" aria-label="Ajuda">?</button>
+<div id="faq-overlay" onclick="toggleFAQ()"></div>
+<div id="faq-sheet">
+  <div class="faq-handle"></div>
+  <div class="faq-header">
+    <h2>Ajuda & FAQ</h2>
+    <button class="faq-close" onclick="toggleFAQ()" aria-label="Fechar">✕</button>
+  </div>
+  <div class="faq-body">
+    <!-- Categoria 1: Como usar o PokerCalc -->
+    <div class="faq-cat" onclick="toggleFaqCat(this)">
+      <span class="faq-cat-title">📱 Como usar o PokerCalc</span>
+      <span class="faq-chevron">▼</span>
+    </div>
+    <div class="faq-cat-items">
+      <div class="faq-item" onclick="toggleFaqItem(this)">
+        <span class="faq-item-title">Como usar a Calculadora</span>
+        <span class="faq-chevron">▼</span>
+      </div>
+      <div class="faq-answer"><div class="faq-answer-inner">
+        <p><strong>1.</strong> Clique nos slots de <strong>Sua Mão</strong> para selecionar suas 2 cartas privadas do deck.</p>
+        <p><strong>2.</strong> Adicione as cartas do <strong>Board</strong> (Flop, Turn, River) conforme a rodada avança.</p>
+        <p><strong>3.</strong> Escolha o número de <strong>oponentes</strong> e clique em <strong>Calcular Odds</strong>.</p>
+        <p><strong>4.</strong> Veja os resultados: <strong>Vitória</strong> (chance de ganhar), <strong>Empate</strong> e <strong>Derrota</strong>.</p>
+        <p>Você também pode usar os <strong>Atalhos Rápidos</strong> (AA, KK, QQ...) para preencher sua mão com um clique.</p>
+      </div></div>
+
+      <div class="faq-item" onclick="toggleFaqItem(this)">
+        <span class="faq-item-title">Como usar o Confronto</span>
+        <span class="faq-chevron">▼</span>
+      </div>
+      <div class="faq-answer"><div class="faq-answer-inner">
+        <p>O modo <strong>Confronto</strong> compara a equity de duas ou mais mãos específicas entre si.</p>
+        <p><strong>1.</strong> Selecione as cartas do <strong>Jogador 1</strong> e do <strong>Jogador 2</strong>.</p>
+        <p><strong>2.</strong> Adicione cartas do board se quiser simular um cenário específico.</p>
+        <p><strong>3.</strong> Clique em <strong>Comparar</strong> para ver quem tem mais chance de ganhar.</p>
+        <p>Ideal para estudar situações como AK vs QQ ou quando quer saber quem é favorito em um all-in.</p>
+      </div></div>
+
+      <div class="faq-item" onclick="toggleFaqItem(this)">
+        <span class="faq-item-title">Como funciona o Vale a Pena (EV)</span>
+        <span class="faq-chevron">▼</span>
+      </div>
+      <div class="faq-answer"><div class="faq-answer-inner">
+        <p><strong>EV (Expected Value)</strong> calcula se uma jogada é lucrativa a longo prazo.</p>
+        <p><strong>1.</strong> Informe o tamanho do <strong>pote</strong> atual.</p>
+        <p><strong>2.</strong> Informe o valor da <strong>aposta</strong> que você precisa pagar (call).</p>
+        <p><strong>3.</strong> Informe sua <strong>equity</strong> (use a calculadora para descobrir).</p>
+        <p>Se o <strong>EV for positivo (+)</strong>, a jogada é lucrativa. Se for <strong>negativo (−)</strong>, você perde dinheiro a longo prazo fazendo esse call.</p>
+      </div></div>
+
+      <div class="faq-item" onclick="toggleFaqItem(this)">
+        <span class="faq-item-title">O que são Outs e Equity</span>
+        <span class="faq-chevron">▼</span>
+      </div>
+      <div class="faq-answer"><div class="faq-answer-inner">
+        <p><strong>Equity</strong> é a sua porcentagem de chance de ganhar a mão se ela fosse jogada até o final milhares de vezes. Ex: 70% de equity = você ganha 7 em cada 10 cenários.</p>
+        <p><strong>Outs</strong> são as cartas restantes no deck que completam o seu draw (mão incompleta). Ex: se você tem um flush draw (4 cartas do mesmo naipe), restam <strong>9 outs</strong> para completar.</p>
+        <p><strong>Regra rápida:</strong> Multiplique seus outs por 2 para a chance no próximo street, ou por 4 para Turn + River juntos.</p>
+      </div></div>
+
+      <div class="faq-item" onclick="toggleFaqItem(this)">
+        <span class="faq-item-title">O que é Pot Odds</span>
+        <span class="faq-chevron">▼</span>
+      </div>
+      <div class="faq-answer"><div class="faq-answer-inner">
+        <p><strong>Pot Odds</strong> é a relação entre o valor que você precisa pagar e o tamanho total do pote.</p>
+        <p><strong>Exemplo:</strong> O pote tem R$100 e o oponente aposta R$50. Você precisa pagar R$50 para ganhar R$150 (pote + aposta). Suas pot odds são 50/150 = <strong>33%</strong>.</p>
+        <p><strong>Regra:</strong> Se sua equity for <strong>maior</strong> que suas pot odds, o call é lucrativo. Se for menor, você deve dar fold.</p>
+        <p>Use a aba <strong>Vale a Pena?</strong> para calcular isso automaticamente!</p>
+      </div></div>
+    </div>
+
+    <!-- Categoria 2: Aprenda Poker -->
+    <div class="faq-cat" onclick="toggleFaqCat(this)">
+      <span class="faq-cat-title">🃏 Aprenda Poker</span>
+      <span class="faq-chevron">▼</span>
+    </div>
+    <div class="faq-cat-items">
+      <div class="faq-item" onclick="toggleFaqItem(this)">
+        <span class="faq-item-title">Regras do Texas Hold'em</span>
+        <span class="faq-chevron">▼</span>
+      </div>
+      <div class="faq-answer"><div class="faq-answer-inner">
+        <p>Cada jogador recebe <strong>2 cartas privadas</strong> (hole cards). Em seguida, 5 cartas comunitárias são reveladas em etapas:</p>
+        <ul>
+          <li><strong>Pré-Flop:</strong> Cada jogador recebe suas 2 cartas. Primeira rodada de apostas.</li>
+          <li><strong>Flop:</strong> 3 cartas comunitárias são reveladas. Segunda rodada de apostas.</li>
+          <li><strong>Turn:</strong> A 4ª carta comunitária é revelada. Terceira rodada de apostas.</li>
+          <li><strong>River:</strong> A 5ª e última carta comunitária é revelada. Rodada final de apostas.</li>
+          <li><strong>Showdown:</strong> Jogadores mostram suas cartas. A melhor mão de 5 cartas ganha.</li>
+        </ul>
+        <p>Você pode usar qualquer combinação das suas 2 cartas + as 5 do board para formar a melhor mão de 5 cartas.</p>
+      </div></div>
+
+      <div class="faq-item" onclick="toggleFaqItem(this)">
+        <span class="faq-item-title">Ranking de Mãos</span>
+        <span class="faq-chevron">▼</span>
+      </div>
+      <div class="faq-answer"><div class="faq-answer-inner">
+        <p>Da mais forte para a mais fraca:</p>
+        <div class="faq-hand-list">
+          <span><strong>1.</strong> Royal Flush — A K Q J 10 do mesmo naipe</span>
+          <span><strong>2.</strong> Straight Flush — Sequência do mesmo naipe</span>
+          <span><strong>3.</strong> Quadra — 4 cartas iguais</span>
+          <span><strong>4.</strong> Full House — Trinca + Par</span>
+          <span><strong>5.</strong> Flush — 5 cartas do mesmo naipe</span>
+          <span><strong>6.</strong> Straight — 5 cartas em sequência</span>
+          <span><strong>7.</strong> Trinca — 3 cartas iguais</span>
+          <span><strong>8.</strong> Dois Pares — 2 pares diferentes</span>
+          <span><strong>9.</strong> Par — 2 cartas iguais</span>
+          <span><strong>10.</strong> Carta Alta — Nenhuma combinação</span>
+        </div>
+      </div></div>
+
+      <div class="faq-item" onclick="toggleFaqItem(this)">
+        <span class="faq-item-title">Posições na Mesa</span>
+        <span class="faq-chevron">▼</span>
+      </div>
+      <div class="faq-answer"><div class="faq-answer-inner">
+        <p>A posição influencia diretamente sua estratégia:</p>
+        <ul>
+          <li><strong>UTG (Under the Gun):</strong> Primeiro a agir. Jogue apenas mãos premium (AA, KK, QQ, AK).</li>
+          <li><strong>MP (Middle Position):</strong> Posição intermediária. Pode abrir um pouco mais.</li>
+          <li><strong>CO (Cutoff):</strong> Penúltimo antes do dealer. Boa posição para roubar blinds.</li>
+          <li><strong>BTN (Button/Dealer):</strong> Melhor posição! Você age por último após o flop. Jogue mais mãos.</li>
+          <li><strong>SB (Small Blind):</strong> Aposta obrigatória pequena. Posição ruim pós-flop.</li>
+          <li><strong>BB (Big Blind):</strong> Aposta obrigatória grande. Já tem dinheiro no pote, pode defender mais.</li>
+        </ul>
+        <p><strong>Dica:</strong> Quanto mais tarde você age, mais informação tem. Jogue mais mãos em posição tardia!</p>
+      </div></div>
+
+      <div class="faq-item" onclick="toggleFaqItem(this)">
+        <span class="faq-item-title">Estratégia Básica</span>
+        <span class="faq-chevron">▼</span>
+      </div>
+      <div class="faq-answer"><div class="faq-answer-inner">
+        <p><strong>Estilo Tight-Aggressive (TAG):</strong> O mais recomendado para iniciantes.</p>
+        <ul>
+          <li><strong>Tight:</strong> Jogue poucas mãos, apenas as boas. Não entre em todo pote.</li>
+          <li><strong>Aggressive:</strong> Quando jogar, aposte e dê raise. Evite só dar call (limpar).</li>
+          <li><strong>Posição importa:</strong> Jogue mais mãos no BTN/CO e menos no UTG/SB.</li>
+          <li><strong>Use pot odds:</strong> Só pague apostas quando a matemática está a seu favor.</li>
+          <li><strong>Não blefe demais:</strong> Contra iniciantes, jogue suas cartas. Blefe pouco e em boas situações.</li>
+          <li><strong>Controle o pote:</strong> Com mãos médias, mantenha o pote pequeno. Com mãos fortes, aposte para valor.</li>
+        </ul>
+      </div></div>
+
+      <div class="faq-item" onclick="toggleFaqItem(this)">
+        <span class="faq-item-title">Glossário de Termos</span>
+        <span class="faq-chevron">▼</span>
+      </div>
+      <div class="faq-answer"><div class="faq-answer-inner">
+        <ul>
+          <li><span class="faq-term">All-in</span> — Apostar todas as suas fichas.</li>
+          <li><span class="faq-term">Blind</span> — Aposta obrigatória antes das cartas serem distribuídas.</li>
+          <li><span class="faq-term">Call</span> — Pagar a aposta do oponente.</li>
+          <li><span class="faq-term">Check</span> — Passar a vez sem apostar (só quando ninguém apostou).</li>
+          <li><span class="faq-term">Fold</span> — Desistir da mão.</li>
+          <li><span class="faq-term">Raise</span> — Aumentar a aposta.</li>
+          <li><span class="faq-term">Pot</span> — O total de fichas acumuladas no centro da mesa.</li>
+          <li><span class="faq-term">Nuts</span> — A melhor mão possível com o board atual.</li>
+          <li><span class="faq-term">Draw</span> — Mão incompleta que precisa de mais uma carta.</li>
+          <li><span class="faq-term">Outs</span> — Cartas que completam seu draw.</li>
+          <li><span class="faq-term">Equity</span> — Sua porcentagem de chance de ganhar.</li>
+          <li><span class="faq-term">EV</span> — Expected Value, o valor esperado de uma jogada a longo prazo.</li>
+          <li><span class="faq-term">Muck</span> — Não mostrar suas cartas ao desistir.</li>
+          <li><span class="faq-term">Showdown</span> — Momento de mostrar as cartas para decidir o vencedor.</li>
+          <li><span class="faq-term">Tilt</span> — Jogar mal por estar emocionalmente abalado.</li>
+        </ul>
+      </div></div>
+    </div>
+  </div>
+</div>
+
 <!-- BOTTOM NAV — só aparece em mobile (≤600px) -->
 <nav id="mobile-bottom-nav" style="display:none">
   <button class="mob-tab active" id="mob-tab-calc" onclick="switchMode('calc');setMobTab('calc')">
@@ -1349,10 +1547,6 @@ input.ev-input:focus{border-color:var(--gold);}
       <!-- Sua Mão -->
       <div class="flex items-center gap-1 mb-2">
         <p class="stitle">Sua Mão</p>
-        <div class="tip-wrap tip-down">
-          <span class="tip-icon">?</span>
-          <div class="tip-box">As 2 cartas privadas que só você vê. Clique em uma carta do deck para preenchê-las.</div>
-        </div>
       </div>
       <div class="flex gap-3 mb-3" id="hole-slots"></div>
       <!-- Quick hands -->
@@ -1363,10 +1557,6 @@ input.ev-input:focus{border-color:var(--gold);}
       <!-- Board -->
       <div class="flex items-center gap-1 mb-2">
         <p class="stitle">Board</p>
-        <div class="tip-wrap tip-down">
-          <span class="tip-icon">?</span>
-          <div class="tip-box">As cartas comunitárias abertas na mesa. Flop = 3 cartas, Turn = 4ª carta, River = 5ª carta.</div>
-        </div>
       </div>
       <div class="flex gap-2 flex-wrap" id="board-slots"></div>
     </div>
@@ -1417,10 +1607,6 @@ input.ev-input:focus{border-color:var(--gold);}
       <div class="flex items-center justify-between mb-2">
         <div class="flex items-center gap-1">
           <p class="stitle">Win Equity</p>
-          <div class="tip-wrap tip-down tip-right">
-            <span class="tip-icon">?</span>
-            <div class="tip-box"><strong style="color:var(--gold)">Equity</strong> é a sua % de chance de ganhar a mão se ela fosse jogada até o final milhares de vezes. Ex: 70% de equity = você ganha 7 em cada 10 cenários simulados.</div>
-          </div>
         </div>
         <span class="hand-badge" id="hand-badge" style="display:none"><span style="color:var(--gold)">♠</span><span id="hand-name">—</span></span>
       </div>
@@ -1444,10 +1630,6 @@ input.ev-input:focus{border-color:var(--gold);}
     <div class="glass p-3">
       <div class="flex items-center gap-1 mb-2">
         <p class="stitle">Probabilidades de Draw</p>
-        <div class="tip-wrap tip-right">
-          <span class="tip-icon">?</span>
-          <div class="tip-box"><strong style="color:var(--gold)">Draw</strong> é quando você está a uma carta de completar uma mão forte. <strong style="color:var(--gold)">Outs</strong> são as cartas do deck que completam o seu draw. Ex: flush draw = 9 outs = ~19% de chance no próximo street.</div>
-        </div>
       </div>
       <div id="draws-box"><p class="text-xs text-center py-6" style="color:rgba(255,255,255,.2);letter-spacing:.1em">CALCULE PARA VER OS DRAWS DISPONÍVEIS</p></div>
     </div>
@@ -1456,10 +1638,6 @@ input.ev-input:focus{border-color:var(--gold);}
         <div class="flex items-center gap-2">
           <span style="font-size:15px">⚠️</span>
           <p class="stitle">Mãos que te Vencem</p>
-          <div class="tip-wrap">
-            <span class="tip-icon">?</span>
-            <div class="tip-box">Todos os pares de cartas que o oponente poderia ter e que ganhariam de você com o board atual. Útil para saber o quão segura está sua mão.</div>
-          </div>
         </div>
         <span id="beat-badge" class="text-xs font-mono px-2 py-0.5 rounded" style="border:1px solid rgba(231,76,60,.3);background:rgba(231,76,60,.1);color:#e74c3c">—</span>
       </div>
@@ -2966,35 +3144,49 @@ window.addEventListener('resize', ()=>{
   if(mode==='calc') renderCalcTable();
 });
 
-// ── Touch: tooltips ──
-// No mobile (sem hover), toque no ícone ? abre/fecha o tooltip
-document.addEventListener('touchstart', e=>{
-  const icon = e.target.closest('.tip-icon');
-  if(icon){
-    e.preventDefault();
-    const wrap = icon.closest('.tip-wrap');
-    const box  = wrap ? wrap.querySelector('.tip-box') : null;
-    if(!box) return;
-    // fecha todos os outros abertos
-    document.querySelectorAll('.tip-box.touch-open').forEach(b=>{
-      if(b!==box){ b.style.display='none'; b.classList.remove('touch-open'); }
-    });
-    const isOpen = box.classList.contains('touch-open');
-    box.style.display = isOpen ? 'none' : 'block';
-    box.classList.toggle('touch-open', !isOpen);
+// ── FAQ Interactive ──
+function toggleFAQ(){
+  const sheet=document.getElementById('faq-sheet');
+  const overlay=document.getElementById('faq-overlay');
+  const isOpen=sheet.classList.contains('faq-open');
+  if(isOpen){
+    sheet.classList.remove('faq-open');
+    overlay.style.display='none';
+    document.body.style.overflow='';
   } else {
-    // toque fora fecha todos
-    document.querySelectorAll('.tip-box.touch-open').forEach(b=>{
-      b.style.display='none'; b.classList.remove('touch-open');
+    sheet.classList.add('faq-open');
+    overlay.style.display='block';
+    document.body.style.overflow='hidden';
+  }
+}
+function toggleFaqCat(el){
+  const items=el.nextElementSibling;
+  el.classList.toggle('faq-expanded');
+  if(el.classList.contains('faq-expanded')){
+    items.style.maxHeight=items.scrollHeight+'px';
+  } else {
+    items.style.maxHeight='0';
+    items.querySelectorAll('.faq-item-open').forEach(i=>{
+      i.classList.remove('faq-item-open');
+      i.nextElementSibling.style.maxHeight='0';
     });
   }
-},{passive:false});
-// Fecha tooltips ao rolar no mobile
-document.addEventListener('touchmove', ()=>{
-  document.querySelectorAll('.tip-box.touch-open').forEach(b=>{
-    b.style.display='none'; b.classList.remove('touch-open');
+}
+function toggleFaqItem(el){
+  const answer=el.nextElementSibling;
+  const wasOpen=el.classList.contains('faq-item-open');
+  el.parentElement.querySelectorAll('.faq-item-open').forEach(i=>{
+    i.classList.remove('faq-item-open');
+    i.nextElementSibling.style.maxHeight='0';
   });
-},{passive:true});
+  if(!wasOpen){
+    el.classList.add('faq-item-open');
+    answer.style.maxHeight=answer.scrollHeight+'px';
+  }
+  const catItems=el.closest('.faq-cat-items');
+  if(catItems) setTimeout(()=>{catItems.style.maxHeight=catItems.scrollHeight+'px';},10);
+}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){const s=document.getElementById('faq-sheet');if(s.classList.contains('faq-open'))toggleFAQ();}});
 </script>
 
 <!-- Botão instalar PWA -->
@@ -3389,5 +3581,5 @@ def termos():
 
 if __name__ == '__main__':
     import os, sys
-    port = int(os.environ.get('PORT', 8080))
+    port = int(os.environ.get('PORT', 8084))
     app.run(debug=os.environ.get('FLASK_DEBUG','False')=='True', host='0.0.0.0', port=port)
