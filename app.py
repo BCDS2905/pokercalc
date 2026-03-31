@@ -655,6 +655,8 @@ select{background:rgba(13,35,24,.9);border:1px solid rgba(201,168,76,.25);color:
 ════════════════════════════════════════ */
 @media(max-width:860px){
   #faq-fab{bottom:calc(68px + 16px)!important;}
+  #faq-sheet{max-height:calc(85vh - 68px)!important;padding-bottom:calc(68px + env(safe-area-inset-bottom,0px))!important;}
+  .faq-body{overflow-y:auto!important;-webkit-overflow-scrolling:touch!important;}
   .cols{flex-direction:column!important;}
   .left-col{width:100%!important;}
   .hdr-right .sim-info.hdr-link{display:inline-flex;}
@@ -731,6 +733,9 @@ select{background:rgba(13,35,24,.9);border:1px solid rgba(201,168,76,.25);color:
 @media(max-width:600px){
   /* FAQ FAB acima do bottom nav */
   #faq-fab{bottom:calc(68px + 16px)!important;right:16px!important;}
+  /* FAQ sheet: espaço para bottom nav no mobile */
+  #faq-sheet{max-height:calc(85vh - 68px)!important;padding-bottom:calc(68px + env(safe-area-inset-bottom,0px))!important;}
+  .faq-body{overflow-y:auto!important;-webkit-overflow-scrolling:touch!important;max-height:none!important;}
   /* Espaço para bottom nav */
   body{padding-bottom:68px!important;}
 
@@ -1021,10 +1026,10 @@ select{background:rgba(13,35,24,.9);border:1px solid rgba(201,168,76,.25);color:
 #pwa-install-btn svg{width:16px;height:16px;flex-shrink:0;}
 
 /* ── FAQ Bottom Sheet ── */
-#faq-fab{position:fixed;bottom:24px;right:20px;width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#c9a84c,#b8943f);color:#07140c;border:none;font-family:'Rajdhani',sans-serif;font-size:30px;font-weight:700;cursor:pointer;z-index:1001;box-shadow:0 4px 16px rgba(201,168,76,.35);transition:transform .2s,box-shadow .2s;display:flex;align-items:center;justify-content:center;}
+#faq-fab{position:fixed;bottom:24px;right:20px;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#c9a84c,#b8943f);color:#07140c;border:none;font-family:'Rajdhani',sans-serif;font-size:24px;font-weight:700;cursor:pointer;z-index:1001;box-shadow:0 4px 16px rgba(201,168,76,.35);transition:transform .2s,box-shadow .2s;display:flex;align-items:center;justify-content:center;}
 #faq-fab:hover{transform:scale(1.1);box-shadow:0 6px 24px rgba(201,168,76,.5);}
 #faq-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:2000;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);transition:opacity .3s;}
-#faq-sheet{position:fixed;bottom:0;left:0;right:0;max-height:82vh;z-index:2001;background:rgba(7,20,12,.98);border-top:2px solid rgba(201,168,76,.4);border-radius:16px 16px 0 0;overflow-y:auto;transform:translateY(100%);transition:transform .35s cubic-bezier(.32,1,.23,1);padding-bottom:env(safe-area-inset-bottom,0px);}
+#faq-sheet{position:fixed;bottom:0;left:0;right:0;max-height:85vh;z-index:2001;background:rgba(7,20,12,.98);border-top:2px solid rgba(201,168,76,.4);border-radius:16px 16px 0 0;overflow-y:auto;-webkit-overflow-scrolling:touch;transform:translateY(100%);transition:transform .35s cubic-bezier(.32,1,.23,1);padding-bottom:env(safe-area-inset-bottom,0px);}
 #faq-sheet.faq-open{transform:translateY(0);}
 #faq-sheet::-webkit-scrollbar{width:4px;}
 #faq-sheet::-webkit-scrollbar-thumb{background:rgba(201,168,76,.3);border-radius:2px;}
@@ -1039,20 +1044,27 @@ select{background:rgba(13,35,24,.9);border:1px solid rgba(201,168,76,.25);color:
 .faq-cat-title{font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:600;color:var(--gold);letter-spacing:.5px;}
 .faq-chevron{color:rgba(201,168,76,.5);font-size:12px;transition:transform .3s;display:inline-block;}
 .faq-cat.faq-expanded .faq-chevron{transform:rotate(180deg);}
-.faq-cat-items{max-height:0;overflow:hidden;transition:max-height .35s ease;}
+.faq-cat-items{display:none;}
 .faq-item{display:flex;align-items:center;justify-content:space-between;padding:12px 20px 12px 32px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.04);transition:background .2s;border-left:3px solid transparent;}
 .faq-item:hover{background:rgba(201,168,76,.04);border-left-color:rgba(201,168,76,.3);}
 .faq-item.faq-item-open{border-left-color:var(--gold);background:rgba(201,168,76,.06);}
 .faq-item-title{font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:500;color:rgba(255,255,255,.85);}
 .faq-item .faq-chevron{font-size:10px;}
 .faq-item.faq-item-open .faq-chevron{transform:rotate(180deg);}
-.faq-answer{max-height:0;overflow:hidden;transition:max-height .35s ease;padding:0 20px 0 35px;}
+.faq-answer{display:none;padding:0 20px 0 35px;}
 .faq-answer-inner{padding:8px 0 16px;color:rgba(255,255,255,.7);font-family:'Rajdhani',sans-serif;font-size:13px;line-height:1.7;}
 .faq-answer-inner strong{color:var(--gold);font-weight:600;}
 .faq-answer-inner ul{margin:6px 0;padding-left:18px;}
 .faq-answer-inner li{margin-bottom:4px;}
 .faq-answer-inner .faq-hand-list{display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;margin:8px 0;}
 .faq-answer-inner .faq-term{color:var(--gold);font-weight:600;}
+
+/* ── Tooltip System ── */
+.tip-box{display:none;position:fixed;z-index:100000;max-width:min(320px,calc(100vw - 32px));padding:12px 16px;border-radius:10px;background:rgba(7,20,12,.97);border:1px solid rgba(201,168,76,.35);color:var(--cream);font-family:'Rajdhani',sans-serif;font-size:13px;line-height:1.6;box-shadow:0 8px 32px rgba(0,0,0,.6),0 0 0 1px rgba(201,168,76,.1);pointer-events:none;opacity:0;transition:opacity .18s ease;word-wrap:break-word;-webkit-backdrop-filter:none;backdrop-filter:none;}
+.tip-box.tip-visible{display:block!important;pointer-events:auto!important;opacity:1!important;z-index:100000!important;}
+.tip-box strong{color:var(--gold);font-weight:700;}
+.tip-btn{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:rgba(201,168,76,.15);border:1px solid rgba(201,168,76,.3);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;margin-left:6px;transition:all .15s;vertical-align:middle;line-height:1;flex-shrink:0;}
+.tip-btn:hover{background:rgba(201,168,76,.3);border-color:var(--gold);transform:scale(1.1);}
 
 /* ── Quick Hands ── */
 .qh-btn{padding:4px 9px;border-radius:6px;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:11px;letter-spacing:.06em;cursor:pointer;border:1px solid rgba(201,168,76,.2);background:rgba(13,35,24,.8);color:rgba(201,168,76,.7);transition:all .15s;white-space:nowrap;}
@@ -1295,6 +1307,22 @@ input.ev-input:focus{border-color:var(--gold);}
 .t-seat-name{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:10px;letter-spacing:.08em;color:rgba(255,255,255,.5);}
 .t-seat-eq{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:12px;transition:color .3s;}
 .t-seat-rnk{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:8px;font-weight:700;}
+/* Desktop: coluna direita sticky com scroll interno */
+@media(min-width:861px){
+  #mode-calc > .cols > .flex-1{
+    position:sticky;top:60px;align-self:flex-start;
+    max-height:calc(100vh - 70px);overflow-y:auto;
+    scrollbar-width:thin;scrollbar-color:rgba(201,168,76,.2) transparent;
+  }
+  #mode-calc > .cols > .flex-1::-webkit-scrollbar{width:4px;}
+  #mode-calc > .cols > .flex-1::-webkit-scrollbar-thumb{background:rgba(201,168,76,.2);border-radius:4px;}
+  #mode-calc > .cols > .flex-1::-webkit-scrollbar-track{background:transparent;}
+  /* Mesa mantém tamanho original */
+  #calc-table-panel{flex-shrink:0;}
+  #calc-equity-panel{flex-shrink:0;}
+  /* Footer fixo no bottom */
+  footer{position:sticky;bottom:0;z-index:100;background:rgba(7,20,12,.98);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
+}
 </style>
 </head>
 <body>
@@ -1642,8 +1670,7 @@ input.ev-input:focus{border-color:var(--gold);}
         <span id="beat-badge" class="text-xs font-mono px-2 py-0.5 rounded" style="border:1px solid rgba(231,76,60,.3);background:rgba(231,76,60,.1);color:#e74c3c">—</span>
       </div>
       <p class="text-xs mb-4" style="color:rgba(255,255,255,.3);line-height:1.5">Todos os pares possíveis no deck que superam sua mão atual.</p>
-      <!-- Sem limite de altura — mostra todos os grupos -->
-      <div id="winning-cards-box"></div>
+      <div id="winning-cards-box" style="max-height:35vh;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:8px;"></div>
     </div>
     <!-- Referência compacta — linha única -->
     <div class="glass px-4 py-3 ref-table-wrap">
@@ -3144,6 +3171,72 @@ window.addEventListener('resize', ()=>{
   if(mode==='calc') renderCalcTable();
 });
 
+// ── Tooltip System ──
+(function(){
+  let tipEl=null;
+  function getTipEl(){
+    if(!tipEl){
+      tipEl=document.createElement('div');
+      tipEl.className='tip-box';
+      document.body.appendChild(tipEl);
+    }
+    return tipEl;
+  }
+  function positionTip(anchor,tip){
+    const r=anchor.getBoundingClientRect();
+    const vw=window.innerWidth,vh=window.innerHeight;
+    let top=r.bottom+8,left=r.left+r.width/2;
+    tip.style.cssText='position:fixed!important;z-index:100000!important;display:block!important;opacity:1!important;pointer-events:auto!important;';
+    tip.style.setProperty('display','block','important');
+    /* measure after making visible */
+    const tw=tip.offsetWidth||240,th=tip.offsetHeight||60;
+    /* flip above if no room below */
+    if(top+th>vh-16) top=r.top-th-8;
+    /* center horizontally, clamp to viewport */
+    left=Math.max(12,Math.min(left-tw/2,vw-tw-12));
+    if(top<8) top=8;
+    tip.style.top=top+'px';
+    tip.style.left=left+'px';
+    tip.classList.add('tip-visible');
+  }
+  function showTip(btn){
+    const tip=getTipEl();
+    tip.innerHTML=btn.getAttribute('data-tip')||'';
+    positionTip(btn,tip);
+  }
+  function hideTip(){
+    const tip=getTipEl();
+    tip.classList.remove('tip-visible');
+    tip.style.cssText='';
+    tip.style.setProperty('display','none','important');
+  }
+  /* Delegate events on tip-btn elements */
+  document.addEventListener('mouseenter',function(e){
+    if(e.target.classList&&e.target.classList.contains('tip-btn'))showTip(e.target);
+  },true);
+  document.addEventListener('mouseleave',function(e){
+    if(e.target.classList&&e.target.classList.contains('tip-btn'))hideTip();
+  },true);
+  document.addEventListener('focusin',function(e){
+    if(e.target.classList&&e.target.classList.contains('tip-btn'))showTip(e.target);
+  });
+  document.addEventListener('focusout',function(e){
+    if(e.target.classList&&e.target.classList.contains('tip-btn'))hideTip();
+  });
+  /* Touch: toggle on tap */
+  document.addEventListener('click',function(e){
+    if(e.target.classList&&e.target.classList.contains('tip-btn')){
+      const tip=getTipEl();
+      if(tip.classList.contains('tip-visible')){hideTip();}else{showTip(e.target);}
+      e.stopPropagation();
+    } else {
+      hideTip();
+    }
+  });
+  window._showTip=showTip;
+  window._hideTip=hideTip;
+})();
+
 // ── FAQ Interactive ──
 function toggleFAQ(){
   const sheet=document.getElementById('faq-sheet');
@@ -3163,28 +3256,30 @@ function toggleFaqCat(el){
   const items=el.nextElementSibling;
   el.classList.toggle('faq-expanded');
   if(el.classList.contains('faq-expanded')){
-    items.style.maxHeight=items.scrollHeight+'px';
+    items.style.display='block';
+    setTimeout(()=>{el.scrollIntoView({behavior:'smooth',block:'start'});},50);
   } else {
-    items.style.maxHeight='0';
+    items.style.display='none';
     items.querySelectorAll('.faq-item-open').forEach(i=>{
       i.classList.remove('faq-item-open');
-      i.nextElementSibling.style.maxHeight='0';
+      i.nextElementSibling.style.display='none';
     });
   }
 }
 function toggleFaqItem(el){
   const answer=el.nextElementSibling;
   const wasOpen=el.classList.contains('faq-item-open');
+  /* Fecha todos os itens abertos na mesma categoria */
   el.parentElement.querySelectorAll('.faq-item-open').forEach(i=>{
     i.classList.remove('faq-item-open');
-    i.nextElementSibling.style.maxHeight='0';
+    i.nextElementSibling.style.display='none';
   });
   if(!wasOpen){
     el.classList.add('faq-item-open');
-    answer.style.maxHeight=answer.scrollHeight+'px';
+    answer.style.display='block';
+    /* Scroll para o item aberto dentro do FAQ sheet */
+    setTimeout(()=>{el.scrollIntoView({behavior:'smooth',block:'start'});},50);
   }
-  const catItems=el.closest('.faq-cat-items');
-  if(catItems) setTimeout(()=>{catItems.style.maxHeight=catItems.scrollHeight+'px';},10);
 }
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){const s=document.getElementById('faq-sheet');if(s.classList.contains('faq-open'))toggleFAQ();}});
 </script>
@@ -3581,5 +3676,5 @@ def termos():
 
 if __name__ == '__main__':
     import os, sys
-    port = int(os.environ.get('PORT', 8084))
+    port = int(os.environ.get('PORT', 8086))
     app.run(debug=os.environ.get('FLASK_DEBUG','False')=='True', host='0.0.0.0', port=port)
