@@ -7,7 +7,7 @@ python app.py --test       →  roda os testes
 """
 import sys, random, itertools, threading, uuid, time, os, secrets
 from collections import Counter, defaultdict
-from flask import Flask, request, jsonify, Response, redirect
+from flask import Flask, request, jsonify, Response, redirect, g
 
 # ─── Tenta carregar avaliador C++ (20x mais rápido) ──────
 _APP_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -31,28 +31,46 @@ app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(32))
 # Headers de segurança em todas as respostas
 import gzip, io
 
+_ALLOWED_ORIGINS = {
+    'https://pokercalc.com.br',
+    'https://www.pokercalc.com.br',
+    'http://localhost:8080',
+    'http://localhost:8086',
+    'http://127.0.0.1:8080',
+    'http://127.0.0.1:8086',
+}
+
+@app.before_request
+def _gen_nonce():
+    g.csp_nonce = secrets.token_urlsafe(16)
+
 @app.after_request
 def set_security_headers(response):
-    # ── CORS — permite requisições do Vercel e pokercalc.com.br ──
+    # ── CORS — whitelist exata (sem substring match) ──
     origin = request.headers.get('Origin', '')
-    allowed_origins = ['pokercalc.com.br', 'www.pokercalc.com.br', 'vercel.app', 'localhost', '127.0.0.1']
-    if any(a in origin for a in allowed_origins):
+    if origin in _ALLOWED_ORIGINS:
         response.headers['Access-Control-Allow-Origin']  = origin
         response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
         response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
 
     # ── Segurança ──
+    nonce = getattr(g, 'csp_nonce', '')
     response.headers['X-Frame-Options'] = 'DENY'
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['Content-Security-Policy'] = (
         "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://www.googletagmanager.com; "
+        f"script-src 'self' 'nonce-{nonce}' https://cdn.tailwindcss.com https://www.googletagmanager.com https://pagead2.googlesyndication.com; "
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
         "font-src 'self' https://fonts.gstatic.com; "
         "img-src 'self' data: https://www.googletagmanager.com; "
         "connect-src 'self' https://www.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net; "
-        "frame-ancestors 'none';"
+        "frame-ancestors 'none'; "
+        "object-src 'none'; "
+        "base-uri 'self'; "
+        "form-action 'self';"
     )
+    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    response.headers['Permissions-Policy'] = 'geolocation=(), microphone=(), camera=(), usb=(), payment=()'
     if os.environ.get('FLASK_ENV') == 'production':
         response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
     response.headers.pop('Server', None)
@@ -91,16 +109,12 @@ def set_security_headers(response):
 
     return response
 
-# CORS: só permite requisições da própria origem
+# CORS: só permite requisições de origens na whitelist exata
 @app.before_request
 def check_origin():
     if request.method == 'POST':
         origin = request.headers.get('Origin', '')
-        host   = request.headers.get('Host', '')
-        allowed = ['localhost', '127.0.0.1', host,
-                   'pokercalc.com.br', 'www.pokercalc.com.br',
-                   'vercel.app', 'onrender.com']
-        if origin and not any(a in origin for a in allowed):
+        if origin and origin not in _ALLOWED_ORIGINS:
             return jsonify({'error': 'Origem não permitida.'}), 403
 # Limita cada IP a 30 requisições por minuto nas rotas de cálculo
 _RATE              = defaultdict(list)  # ip → [timestamps]
@@ -570,23 +584,26 @@ HTML = r"""<!DOCTYPE html>
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
 <style>
-:root{--felt:#0d2318;--felt-edge:#071a10;--gold:#c9a84c;--gold-light:#e8c96d;--gold-dim:#7a6230;--cream:#f5ead4;--red-suit:#d63031;--card-bg:#f9f3e8;--card-shadow:rgba(0,0,0,.7);--glow-gold:0 0 20px rgba(201,168,76,.4);}
+:root{--felt:#0d2318;--felt-edge:#071a10;--gold:#c9a84c;--gold-light:#e8c96d;--gold-dim:#7a6230;--cream:#f5ead4;--red-suit:#d63031;--card-bg:#f9f3e8;--card-shadow:rgba(0,0,0,.7);--glow-gold:0 0 20px rgba(201,168,76,.4);--radius-sm:8px;--radius-lg:12px;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+/* Acessibilidade: foco visível para navegação por teclado */
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px;border-radius:4px;}
+:focus:not(:focus-visible){outline:none;}
 body{font-family:'Rajdhani',sans-serif;background:var(--felt-edge);color:var(--cream);min-height:100vh;overflow-x:hidden;-webkit-text-size-adjust:100%;}
 body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect width='4' height='4' fill='%230d2318'/%3E%3Crect x='0' y='0' width='1' height='1' fill='%230f2a1c' opacity='0.4'/%3E%3C/svg%3E");pointer-events:none;z-index:0;}
 .z1{position:relative;z-index:1;}
 .hdr{border-bottom:1px solid rgba(201,168,76,.2);background:linear-gradient(180deg,rgba(7,26,16,.95) 0%,transparent 100%);backdrop-filter:blur(8px);}
 .logo{font-weight:700;letter-spacing:.12em;color:var(--gold);text-shadow:var(--glow-gold);}
-.glass{background:rgba(13,35,24,.7);border:1px solid rgba(201,168,76,.15);border-radius:12px;backdrop-filter:blur(6px);}
+.glass{background:rgba(13,35,24,.7);border:1px solid rgba(201,168,76,.15);border-radius:var(--radius-lg);backdrop-filter:blur(6px);}
 .stitle{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);opacity:.8;font-weight:600;}
-.playing-card{width:48px;height:68px;background:var(--card-bg);border-radius:6px;border:1px solid rgba(255,255,255,.15);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .15s ease;box-shadow:0 4px 12px var(--card-shadow),inset 0 1px 0 rgba(255,255,255,.9);user-select:none;flex-shrink:0;}
+.playing-card{width:48px;height:68px;background:var(--card-bg);border-radius:var(--radius-sm);border:1px solid rgba(255,255,255,.15);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .15s ease;box-shadow:0 4px 12px var(--card-shadow),inset 0 1px 0 rgba(255,255,255,.9);user-select:none;flex-shrink:0;}
 .playing-card:hover{transform:translateY(-4px) scale(1.06);box-shadow:0 10px 24px var(--card-shadow),var(--glow-gold);}
-.playing-card.used{opacity:.18;cursor:not-allowed;pointer-events:none;}
+.playing-card.used{opacity:.4;filter:grayscale(100%);cursor:not-allowed;pointer-events:none;}
 .card-rank{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:14px;line-height:1;}
 .card-suit{font-size:14px;line-height:1;}
 .red-card .card-rank,.red-card .card-suit{color:var(--red-suit);}
 .black-card .card-rank,.black-card .card-suit{color:#1a1a1a;}
-.slot{width:60px;height:84px;border-radius:8px;border:2px dashed rgba(201,168,76,.35);background:rgba(13,35,24,.6);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;flex-shrink:0;box-shadow:inset 0 0 14px rgba(201,168,76,.06);}
+.slot{width:60px;height:84px;border-radius:var(--radius-sm);border:2px dashed rgba(201,168,76,.35);background:rgba(13,35,24,.6);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;flex-shrink:0;box-shadow:inset 0 0 14px rgba(201,168,76,.06);}
 .slot:not(.filled):hover{border-color:rgba(201,168,76,.6);box-shadow:inset 0 0 20px rgba(201,168,76,.12);}
 .slot.filled{border:2px solid rgba(201,168,76,.6);background:var(--card-bg);box-shadow:0 6px 20px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.8);}
 .slot.filled:hover{box-shadow:0 0 0 2px var(--red-suit),0 6px 16px rgba(0,0,0,.5);}
@@ -596,6 +613,12 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .slot.filled.red-card .slot-rank,.slot.filled.red-card .slot-suit{color:var(--red-suit);}
 .slot.filled.black-card .slot-rank,.slot.filled.black-card .slot-suit{color:#1a1a1a;}
 @keyframes pulse-slot{0%,100%{box-shadow:0 0 8px rgba(201,168,76,.4);}50%{box-shadow:0 0 20px rgba(201,168,76,.8);}}
+/* Transição suave entre modos */
+.mode-panel{display:none!important;opacity:0;transform:translateY(8px);}
+.mode-panel.active{display:block!important;opacity:1;transform:translateY(0);animation:modeIn .25s ease;}
+@keyframes modeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+/* Micro-interação: active state nos atalhos rápidos */
+.shortcut-btn:active{transform:scale(.95);}
 .gauge{position:relative;width:130px;height:130px;display:flex;align-items:center;justify-content:center;}
 .g-svg{transform:rotate(-90deg);}
 .g-track{fill:none;stroke:rgba(255,255,255,.05);stroke-width:10;}
@@ -613,7 +636,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .btn-calc:disabled{opacity:.4;cursor:not-allowed;transform:none;}
 .btn-rst{background:transparent;border:1px solid rgba(201,168,76,.3);color:var(--gold);font-family:'Rajdhani',sans-serif;font-weight:600;font-size:12px;letter-spacing:.12em;text-transform:uppercase;border-radius:8px;padding:9px 18px;cursor:pointer;transition:all .2s;}
 .btn-rst:hover{background:rgba(201,168,76,.1);}
-.mode-tab{font-family:'Rajdhani',sans-serif;font-weight:600;font-size:13px;letter-spacing:.15em;text-transform:uppercase;padding:7px 20px;border-radius:7px;border:1px solid transparent;cursor:pointer;transition:all .2s;background:transparent;color:rgba(201,168,76,.45);}
+.mode-tab{font-family:'Rajdhani',sans-serif;font-weight:600;font-size:13px;letter-spacing:.15em;text-transform:uppercase;padding:7px 20px;border-radius:7px;border:1px solid transparent;cursor:pointer;transition:all .2s;background:transparent;color:rgba(201,168,76,.7);}
 .mode-tab:hover{color:var(--gold);background:rgba(201,168,76,.06);}
 .mode-tab.active{color:var(--felt-edge);background:linear-gradient(135deg,#c9a84c,#e8c96d);border-color:var(--gold);box-shadow:var(--glow-gold);}
 .stab{padding:3px 9px;border-radius:6px;font-size:16px;cursor:pointer;transition:all .15s;border:1px solid transparent;background:transparent;}
@@ -1515,17 +1538,17 @@ input.ev-input:focus{border-color:var(--gold);}
 </div>
 
 <!-- BOTTOM NAV — só aparece em mobile (≤600px) -->
-<nav id="mobile-bottom-nav" style="display:none">
-  <button class="mob-tab active" id="mob-tab-calc" onclick="switchMode('calc');setMobTab('calc')">
-    <span class="mob-tab-icon">♠</span>
+<nav id="mobile-bottom-nav" role="tablist" aria-label="Navegação principal" style="display:none">
+  <button class="mob-tab active" id="mob-tab-calc" onclick="switchMode('calc');setMobTab('calc')" role="tab" aria-selected="true" aria-label="Calculadora de odds">
+    <span class="mob-tab-icon" aria-hidden="true">♠</span>
     <span>Calculadora</span>
   </button>
-  <button class="mob-tab" id="mob-tab-ev" onclick="switchMode('ev');setMobTab('ev')">
-    <span class="mob-tab-icon">📊</span>
+  <button class="mob-tab" id="mob-tab-ev" onclick="switchMode('ev');setMobTab('ev')" role="tab" aria-selected="false" aria-label="Calculadora de valor esperado">
+    <span class="mob-tab-icon" aria-hidden="true">📊</span>
     <span>Vale a Pena?</span>
   </button>
-  <button class="mob-tab" id="mob-tab-compare" onclick="switchMode('compare');setMobTab('compare')">
-    <span class="mob-tab-icon">⚔️</span>
+  <button class="mob-tab" id="mob-tab-compare" onclick="switchMode('compare');setMobTab('compare')" role="tab" aria-selected="false" aria-label="Confronto de mãos">
+    <span class="mob-tab-icon" aria-hidden="true">⚔️</span>
     <span>Confronto</span>
   </button>
 </nav>
@@ -1553,9 +1576,9 @@ input.ev-input:focus{border-color:var(--gold);}
   </div>
   <div class="flex items-center gap-2 hdr-right">
     <div class="flex gap-1 p-1 rounded-lg hdr-tabs" style="background:rgba(13,35,24,.7);border:1px solid rgba(201,168,76,.12)">
-      <button class="mode-tab active" id="tab-calc"    onclick="switchMode('calc')">Calculadora</button>
-      <button class="mode-tab"        id="tab-ev"      onclick="switchMode('ev')">Vale a Pena?</button>
-      <button class="mode-tab"        id="tab-compare" onclick="switchMode('compare')">Confronto ♠♥</button>
+      <button class="mode-tab active" id="tab-calc"    onclick="switchMode('calc')" role="tab" aria-selected="true" aria-label="Calculadora de odds">Calculadora</button>
+      <button class="mode-tab"        id="tab-ev"      onclick="switchMode('ev')" role="tab" aria-selected="false" aria-label="Calculadora de valor esperado">Vale a Pena?</button>
+      <button class="mode-tab"        id="tab-compare" onclick="switchMode('compare')" role="tab" aria-selected="false" aria-label="Confronto de mãos">Confronto ♠♥</button>
     </div>
     <span id="sim-counter" class="sim-info text-xs font-mono" style="color:var(--gold-dim)">— simulações</span>
     <span id="moe-badge" style="display:none;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);border-radius:6px;padding:2px 8px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gold-dim)">±—%</span>
@@ -1568,7 +1591,7 @@ input.ev-input:focus{border-color:var(--gold);}
 <main class="flex-1 p-4 max-w-7xl mx-auto w-full">
 
 <!-- CALCULADORA -->
-<div id="mode-calc">
+<div id="mode-calc" class="mode-panel active">
 <div class="flex gap-4 cols">
   <div class="flex flex-col gap-2 left-col" style="width:380px;flex-shrink:0">
     <div class="glass p-4">
@@ -1612,16 +1635,17 @@ input.ev-input:focus{border-color:var(--gold);}
       <!-- Só oponentes -->
       <div class="mb-3">
         <label class="text-xs" style="color:var(--gold-dim)">Oponentes</label>
-        <select id="opponents" class="w-full mt-1"><option value="1">1 oponente</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option></select>
+        <select id="opponents" aria-label="Número de oponentes" class="w-full mt-1"><option value="1">1 oponente</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option></select>
       </div>
       <!-- Botão CALCULAR ODDS grande -->
       <button class="btn-calc w-full flex items-center justify-center gap-3" id="calc-btn" onclick="doCalculate()"
+        aria-label="Calcular probabilidades de vitória"
         style="padding:18px 28px;font-size:18px;letter-spacing:.2em;border-radius:10px;">
         <span id="btn-txt">CALCULAR ODDS</span>
         <div class="loader" id="loader"></div>
       </button>
       <div class="progress-wrap" id="calc-prog-wrap" style="display:none"><div class="progress-fill" id="calc-prog-fill"></div></div>
-      <button class="btn-rst w-full mt-2" onclick="resetCalc()" style="font-size:11px;padding:7px;">RESET</button>
+      <button class="btn-rst w-full mt-2" id="reset-btn" onclick="confirmReset()" aria-label="Resetar cartas selecionadas" style="font-size:11px;padding:7px;">RESET</button>
     </div>
   </div>
   <div class="flex-1 flex flex-col gap-2">
@@ -1689,16 +1713,16 @@ input.ev-input:focus{border-color:var(--gold);}
 </div>
 
 <!-- CONFRONTO -->
-<div id="mode-compare" style="display:none">
+<div id="mode-compare" class="mode-panel">
 <div class="flex gap-4 cols">
   <div class="flex flex-col gap-4 left-col" style="width:420px;flex-shrink:0">
     <div class="glass p-4">
       <div class="flex items-center justify-between mb-3">
         <p class="stitle">Jogadores</p>
         <div class="flex items-center gap-2">
-          <button onclick="chgPlayers(-1)" class="w-8 h-8 rounded font-mono font-bold text-lg flex items-center justify-center" style="background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.2);color:var(--gold)">−</button>
-          <span id="nhd" class="w-8 text-center font-mono font-bold text-lg" style="color:var(--gold)">2</span>
-          <button onclick="chgPlayers(1)"  class="w-8 h-8 rounded font-mono font-bold text-lg flex items-center justify-center" style="background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.2);color:var(--gold)">+</button>
+          <button onclick="chgPlayers(-1)" aria-label="Remover jogador" class="rounded font-mono font-bold text-lg flex items-center justify-center" style="min-width:44px;min-height:44px;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.2);color:var(--gold)">−</button>
+          <span id="nhd" class="w-8 text-center font-mono font-bold text-lg" style="color:var(--gold)" aria-live="polite" aria-label="Número de jogadores">2</span>
+          <button onclick="chgPlayers(1)" aria-label="Adicionar jogador" class="rounded font-mono font-bold text-lg flex items-center justify-center" style="min-width:44px;min-height:44px;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.2);color:var(--gold)">+</button>
           <span class="text-xs font-mono" style="color:rgba(255,255,255,.25)">(2–8)</span>
         </div>
       </div>
@@ -1772,7 +1796,7 @@ input.ev-input:focus{border-color:var(--gold);}
 </div>
 
 <!-- VALE A PENA? -->
-<div id="mode-ev" style="display:none">
+<div id="mode-ev" class="mode-panel">
 
 
 
@@ -1978,25 +2002,44 @@ let _lastCmpResults = null;     // últimos resultados do confronto
 let cmpBoard=[null,null,null,null,null];  // board compartilhado do confronto
 let cmpBoardActive=false;                  // true = próximo clique vai para o board
 
-// ── MODE ──
+// ── MODE (fade+slide transitions) ──
 function switchMode(m){
   mode=m;
-  document.getElementById('mode-calc').style.display=m==='calc'?'block':'none';
-  document.getElementById('mode-compare').style.display=m==='compare'?'block':'none';
-  document.getElementById('mode-ev').style.display=m==='ev'?'block':'none';
+  ['calc','compare','ev'].forEach(id=>{
+    const panel=document.getElementById('mode-'+id);
+    if(panel){panel.classList.toggle('active',m===id);}
+    const t=document.getElementById('tab-'+id);
+    if(t){t.classList.toggle('active',m===id);t.setAttribute('aria-selected',m===id?'true':'false');}
+  });
   if(m==='ev')      setTimeout(renderEvTable, 50);
   if(m==='compare') setTimeout(renderPokerTable, 50);
-  ['calc','compare','ev'].forEach(id=>{
-    const t=document.getElementById('tab-'+id);
-    if(t) t.classList.toggle('active',m===id);
-  });
   // Sync bottom nav
-  document.querySelectorAll('.mob-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.mob-tab').forEach(t=>{t.classList.remove('active');t.setAttribute('aria-selected','false');});
   const mt=document.getElementById('mob-tab-'+m);
-  if(mt) mt.classList.add('active');
+  if(mt){mt.classList.add('active');mt.setAttribute('aria-selected','true');}
   // Sticky equity bar only shows on calc mode
   const seq=document.getElementById('sticky-equity');
   if(seq&&isCompact()) seq.style.display=m==='calc'?'flex':'none';
+  // Persist mode
+  try{localStorage.setItem('pc_mode',m);}catch(e){}
+}
+
+// ── LOCAL STORAGE — persistência de estado ──
+function saveState(){
+  try{
+    localStorage.setItem('pc_hole',JSON.stringify(hole));
+    localStorage.setItem('pc_board',JSON.stringify(board));
+  }catch(e){}
+}
+function loadState(){
+  try{
+    const m=localStorage.getItem('pc_mode');
+    if(m&&['calc','compare','ev'].includes(m)) switchMode(m);
+    const h=JSON.parse(localStorage.getItem('pc_hole'));
+    const b=JSON.parse(localStorage.getItem('pc_board'));
+    if(Array.isArray(h)&&h.length===2){hole=h;renderCalcSlots();buildDeck();}
+    if(Array.isArray(b)&&b.length===5){board=b;renderCalcSlots();buildDeck();updateStreet();}
+  }catch(e){}
 }
 
 // ── MOBILE: bottom nav e deck por naipe ──────────────
@@ -2185,9 +2228,13 @@ function buildDeck(){
       const c=r+s,{r:dr,s:ds,red}=lbl(c);
       const el=document.createElement('div');
       el.className=`playing-card ${red?'red-card':'black-card'}`;
-      if(used.includes(c))el.classList.add('used');
+      const isUsed=used.includes(c);if(isUsed)el.classList.add('used');
       el.innerHTML=`<span class="card-rank">${dr}</span><span class="card-suit">${ds}</span>`;
-      el.onclick=()=>calcPick(c);g.appendChild(el);
+      el.setAttribute('role','button');el.setAttribute('tabindex',isUsed?'-1':'0');
+      el.setAttribute('aria-label',`${dr} de ${ds}${isUsed?' (já usada)':''}`);
+      if(isUsed)el.setAttribute('aria-disabled','true');
+      el.onclick=()=>calcPick(c);el.onkeydown=(e)=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();el.click();}};
+      g.appendChild(el);
     }
   }
 }
@@ -2199,7 +2246,7 @@ function calcPick(c){
   if(type==='hole')hole[index]=c;else board[index]=c;
   renderCalcSlots();
   if(isMobile()) buildMobileDeck(); else buildDeck();
-  updateStreet();
+  updateStreet();saveState();
   if(type==='hole'){const nx=hole.findIndex(x=>!x);if(nx!==-1)activateCalcSlot('hole',nx);else{const bn=board.findIndex(x=>!x);if(bn!==-1)activateCalcSlot('board',bn);}}
   else{const nx=board.findIndex(x=>!x);if(nx!==-1)activateCalcSlot('board',nx);}
 }
@@ -2209,8 +2256,9 @@ function renderCalcSlots(){
     const cont=document.getElementById(id);cont.innerHTML='';
     arr.forEach((c,i)=>{
       const sl=document.createElement('div');const isAct=calcSlot.type===type&&calcSlot.index===i;
-      if(c){const{r,s,red}=lbl(c);sl.className=`slot filled ${red?'red-card':'black-card'}`;sl.innerHTML=`<span class="slot-rank">${r}</span><span class="slot-suit">${s}</span>`;sl.onclick=()=>{if(type==='hole')hole[i]=null;else board[i]=null;renderCalcSlots();if(isMobile())buildMobileDeck();else buildDeck();_userTappedSlot=true;activateCalcSlot(type,i);updateStreet();};}
-      else{sl.className='slot'+(isAct?' active':'');sl.innerHTML=`<span style="color:rgba(201,168,76,.35);font-size:9px;letter-spacing:.1em">${lbls[i]}</span>`;sl.onclick=()=>{_userTappedSlot=true;activateCalcSlot(type,i);};}
+      sl.setAttribute('role','button');sl.setAttribute('tabindex','0');
+      if(c){const{r,s,red}=lbl(c);sl.className=`slot filled ${red?'red-card':'black-card'}`;sl.innerHTML=`<span class="slot-rank">${r}</span><span class="slot-suit">${s}</span>`;sl.setAttribute('aria-label',`${type==='hole'?'Mão':'Board'} ${lbls[i]}: ${r}${s}. Clique para remover`);sl.onclick=()=>{if(type==='hole')hole[i]=null;else board[i]=null;renderCalcSlots();if(isMobile())buildMobileDeck();else buildDeck();_userTappedSlot=true;activateCalcSlot(type,i);updateStreet();};sl.onkeydown=(e)=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();sl.click();}};}
+      else{sl.className='slot'+(isAct?' active':'');sl.innerHTML=`<span style="color:rgba(201,168,76,.35);font-size:9px;letter-spacing:.1em">${lbls[i]}</span>`;sl.setAttribute('aria-label',`${type==='hole'?'Mão':'Board'} ${lbls[i]}: vazio. Clique para selecionar carta`);sl.onclick=()=>{_userTappedSlot=true;activateCalcSlot(type,i);};sl.onkeydown=(e)=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();sl.click();}};}
       cont.appendChild(sl);
     });
   });
@@ -2544,7 +2592,20 @@ function renderBeatingHands(data){
   if(data.total_tie>0){const tie=document.createElement('p');tie.style.cssText='font-size:11px;color:rgba(255,255,255,.3);margin-top:10px;font-family:"JetBrains Mono",monospace;';tie.textContent='+ '+data.total_tie.toLocaleString('pt-BR')+' combos empatam';box.appendChild(tie);}
 }
 
+let _resetPending=false;
+function confirmReset(){
+  const hasCards=hole.some(Boolean)||board.some(Boolean);
+  if(!hasCards){resetCalc();return;}
+  if(_resetPending){resetCalc();_resetPending=false;return;}
+  _resetPending=true;
+  const btn=document.getElementById('reset-btn');
+  if(btn){btn.textContent='CONFIRMAR RESET?';btn.style.borderColor='rgba(231,76,60,.5)';btn.style.color='#e74c3c';}
+  setTimeout(()=>{_resetPending=false;if(btn){btn.textContent='RESET';btn.style.borderColor='';btn.style.color='';}},3000);
+}
 function resetCalc(){
+  const btn=document.getElementById('reset-btn');
+  if(btn){btn.textContent='RESET';btn.style.borderColor='';btn.style.color='';}
+  _resetPending=false;
   hole=[null,null];board=[null,null,null,null,null];calcSlot={type:'hole',index:0};
   _lastCalcWin = undefined;
   renderCalcSlots();applyLayout();activateCalcSlot('hole',0);updateStreet();
@@ -2556,6 +2617,7 @@ function resetCalc(){
   // Reset sticky equity bar
   ['seq-win','seq-tie','seq-lose'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent='—';});
   const sh=document.getElementById('seq-hand');if(sh)sh.textContent='';
+  saveState();
 }
 
 // ── COMPARE ──
@@ -3122,7 +3184,7 @@ function buildQuickHands(){
   cont.innerHTML = '';
   QUICK_HANDS.forEach(qh => {
     const btn = document.createElement('button');
-    btn.className = 'qh-btn';
+    btn.className = 'qh-btn shortcut-btn';
     btn.textContent = qh.label;
     btn.onclick = () => applyQuickHand(qh.cards);
     cont.appendChild(btn);
@@ -3141,7 +3203,7 @@ function applyQuickHand(cards){
   hole[1] = c2;
   renderCalcSlots();
   buildDeck();
-  updateStreet();
+  updateStreet();saveState();
   // auto-advance to board
   const bn = board.findIndex(x=>!x);
   if(bn !== -1) activateCalcSlot('board', bn);
@@ -3152,6 +3214,7 @@ renderCalcSlots();applyLayout();activateCalcSlot('hole',0);updateStreet();
 buildQuickHands();
 renderPlayers();renderCmpBoardSlots();buildCmpDeck();updateCmpStreet();
 calcEV();
+loadState();
 
 // Redesenha mesas quando janela redimensiona
 const pokerCanvas = document.getElementById('poker-table-canvas');
@@ -3339,7 +3402,11 @@ def handle_options(jid=None):
 
 @app.route('/')
 def index():
-    return HTML
+    import re as _re
+    nonce = g.csp_nonce
+    html = _re.sub(r'<script(?=[\s>])', f'<script nonce="{nonce}"', HTML)
+    html = _re.sub(r'<style(?=[\s>])', f'<style nonce="{nonce}"', html)
+    return html
 
 import base64 as _b64
 _FAVICON_32  = _b64.b64decode('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')
@@ -3459,9 +3526,9 @@ _ERROR_PAGE = """<!DOCTYPE html>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>PokerCalc — {code}</title>
 <link rel="icon" type="image/png" href="/favicon.png"/><link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
-<script src="https://cdn.tailwindcss.com"></script>
+<script nonce="{nonce}" src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet"/>
-<style>
+<style nonce="{nonce}">
 :root{{--felt:#0d2318;--felt-edge:#071a10;--gold:#c9a84c;--gold-light:#e8c96d;--cream:#f5ead4;}}
 *{{box-sizing:border-box;margin:0;padding:0;}}
 body{{font-family:'Rajdhani',sans-serif;background:var(--felt-edge);color:var(--cream);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;}}
@@ -3523,8 +3590,9 @@ def _patch_fonts():
 _patch_fonts()
 
 # ── Google Analytics ────────────────────────────────────────────────────────
+import re as _re
 _GA_ID = os.environ.get('GA_MEASUREMENT_ID', 'G-24ME1E1YMV').strip()
-if _GA_ID:
+if _GA_ID and _re.match(r'^G-[0-9A-Z]{6,}$', _GA_ID):
     _ga_snippet = (
         f'<script async src="https://www.googletagmanager.com/gtag/js?id={_GA_ID}"></script>'
         f'<script>window.dataLayer=window.dataLayer||[];'
@@ -3537,6 +3605,8 @@ if _GA_ID:
         _ga_snippet + '<script src="https://cdn.tailwindcss.com"></script>'
     )
     print(f'  📊  Google Analytics ativo: {_GA_ID}')
+elif _GA_ID:
+    print(f'  ⚠  GA_MEASUREMENT_ID inválido: {_GA_ID} — ignorado')
 else:
     print('  📊  Google Analytics desativado (defina GA_MEASUREMENT_ID no Render para ativar)')
 
@@ -3545,7 +3615,8 @@ def not_found(e):
     html = _ERROR_PAGE.format(
         code='404',
         title='Página não encontrada',
-        desc='Essa URL não existe.<br>Mas sua próxima mão pode ser melhor.'
+        desc='Essa URL não existe.<br>Mas sua próxima mão pode ser melhor.',
+        nonce=g.csp_nonce
     )
     return html, 404
 
@@ -3554,12 +3625,14 @@ def server_error(e):
     html = _ERROR_PAGE.format(
         code='500',
         title='Erro interno',
-        desc='Algo deu errado no servidor.<br>Tente novamente em alguns instantes.'
+        desc='Algo deu errado no servidor.<br>Tente novamente em alguns instantes.',
+        nonce=g.csp_nonce
     )
     return html, 500
 
 def _legal_page(title, body_html):
     """Gera página de conteúdo legal com o tema do site."""
+    nonce = g.csp_nonce
     return f"""<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -3567,8 +3640,8 @@ def _legal_page(title, body_html):
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>PokerCalc — {title}</title>
 <link rel="icon" type="image/png" href="/favicon.png"/>
-<script src="https://cdn.tailwindcss.com"></script>
-<style>
+<script nonce="{nonce}" src="https://cdn.tailwindcss.com"></script>
+<style nonce="{nonce}">
 :root{{--felt:#0d2318;--felt-edge:#071a10;--gold:#c9a84c;--cream:#f5ead4;}}
 *{{box-sizing:border-box;margin:0;padding:0;}}
 body{{font-family:system-ui,sans-serif;background:var(--felt-edge);color:var(--cream);min-height:100vh;padding:0 16px 48px;}}
@@ -3677,4 +3750,6 @@ def termos():
 if __name__ == '__main__':
     import os, sys
     port = int(os.environ.get('PORT', 8086))
-    app.run(debug=os.environ.get('FLASK_DEBUG','False')=='True', host='0.0.0.0', port=port)
+    is_production = os.environ.get('FLASK_ENV') == 'production'
+    debug_mode = not is_production and os.environ.get('FLASK_DEBUG', 'False') == 'True'
+    app.run(debug=debug_mode, host='0.0.0.0', port=port)
