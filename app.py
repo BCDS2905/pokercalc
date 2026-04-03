@@ -60,7 +60,7 @@ def set_security_headers(response):
     response.headers['Content-Security-Policy'] = (
         "default-src 'self'; "
         f"script-src 'self' 'nonce-{nonce}' https://www.googletagmanager.com https://pagead2.googlesyndication.com; "
-        f"style-src 'self' 'nonce-{nonce}' https://fonts.googleapis.com; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
         "font-src 'self' https://fonts.gstatic.com; "
         "img-src 'self' data: https://www.googletagmanager.com; "
         "connect-src 'self' https://www.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net; "
@@ -3804,3 +3804,5 @@ if __name__ == '__main__':
     is_production = os.environ.get('FLASK_ENV') == 'production'
     debug_mode = not is_production and os.environ.get('FLASK_DEBUG', 'False') == 'True'
     app.run(debug=debug_mode, host='0.0.0.0', port=port)
+
+
