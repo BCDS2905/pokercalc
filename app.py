@@ -59,8 +59,8 @@ def set_security_headers(response):
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['Content-Security-Policy'] = (
         "default-src 'self'; "
-        f"script-src 'self' 'nonce-{nonce}' https://cdn.tailwindcss.com https://www.googletagmanager.com https://pagead2.googlesyndication.com; "
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+        f"script-src 'self' 'nonce-{nonce}' https://www.googletagmanager.com https://pagead2.googlesyndication.com; "
+        f"style-src 'self' 'nonce-{nonce}' https://fonts.googleapis.com; "
         "font-src 'self' https://fonts.gstatic.com; "
         "img-src 'self' data: https://www.googletagmanager.com; "
         "connect-src 'self' https://www.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net; "
@@ -581,9 +581,27 @@ HTML = r"""<!DOCTYPE html>
 
 <!-- Ícones e favicon -->
 <link rel="icon" type="image/png" href="/favicon.png"/>
-<script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
 <style>
+/* ── Tailwind utilities (internalizadas) ── */
+.block{display:block}.flex{display:flex}.grid{display:grid}.hidden{display:none}
+.flex-1{flex:1 1 0%}.flex-col{flex-direction:column}.flex-wrap{flex-wrap:wrap}.flex-shrink-0{flex-shrink:0}
+.items-center{align-items:center}.items-start{align-items:start}
+.justify-center{justify-content:center}.justify-between{justify-content:space-between}.justify-around{justify-content:space-around}
+.gap-1{gap:.25rem}.gap-1\.5{gap:.375rem}.gap-2{gap:.5rem}.gap-3{gap:.75rem}.gap-4{gap:1rem}.gap-x-4{column-gap:1rem}.gap-y-1{row-gap:.25rem}
+.grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}.grid-cols-5{grid-template-columns:repeat(5,minmax(0,1fr))}
+.p-1{padding:.25rem}.p-3{padding:.75rem}.p-4{padding:1rem}.p-5{padding:1.25rem}
+.px-2{padding-left:.5rem;padding-right:.5rem}.px-3{padding-left:.75rem;padding-right:.75rem}.px-4{padding-left:1rem;padding-right:1rem}
+.py-0\.5{padding-top:.125rem;padding-bottom:.125rem}.py-1{padding-top:.25rem;padding-bottom:.25rem}.py-2{padding-top:.5rem;padding-bottom:.5rem}.py-3{padding-top:.75rem;padding-bottom:.75rem}.py-4{padding-top:1rem;padding-bottom:1rem}.py-6{padding-top:1.5rem;padding-bottom:1.5rem}
+.mb-1{margin-bottom:.25rem}.mb-2{margin-bottom:.5rem}.mb-3{margin-bottom:.75rem}.mb-4{margin-bottom:1rem}
+.mt-1{margin-top:.25rem}.mt-2{margin-top:.5rem}.mt-3{margin-top:.75rem}.mx-auto{margin-left:auto;margin-right:auto}
+.w-8{width:2rem}.w-14{width:3.5rem}.w-full{width:100%}.max-w-7xl{max-width:80rem}.min-h-screen{min-height:100vh}
+.overflow-hidden{overflow:hidden}
+.rounded{border-radius:.25rem}.rounded-full{border-radius:9999px}.rounded-lg{border-radius:.5rem}
+.sticky{position:sticky}.top-0{top:0}.z-50{z-index:50}
+.text-center{text-align:center}.text-xs{font-size:.75rem;line-height:1rem}.text-sm{font-size:.875rem;line-height:1.25rem}.text-lg{font-size:1.125rem;line-height:1.75rem}
+.font-mono{font-family:'JetBrains Mono',ui-monospace,monospace}.font-semibold{font-weight:600}.font-bold{font-weight:700}
+.space-y-1\.5>:not(:first-child){margin-top:.375rem}.space-y-2>:not(:first-child){margin-top:.5rem}
 :root{--felt:#0d2318;--felt-edge:#071a10;--gold:#c9a84c;--gold-light:#e8c96d;--gold-dim:#7a6230;--cream:#f5ead4;--red-suit:#d63031;--card-bg:#f9f3e8;--card-shadow:rgba(0,0,0,.7);--glow-gold:0 0 20px rgba(201,168,76,.4);--radius-sm:8px;--radius-lg:12px;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 /* Acessibilidade: foco visível para navegação por teclado */
@@ -594,8 +612,9 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .z1{position:relative;z-index:1;}
 .hdr{border-bottom:1px solid rgba(201,168,76,.2);background:linear-gradient(180deg,rgba(7,26,16,.95) 0%,transparent 100%);backdrop-filter:blur(8px);}
 .logo{font-weight:700;letter-spacing:.12em;color:var(--gold);text-shadow:var(--glow-gold);}
-.glass{background:rgba(13,35,24,.7);border:1px solid rgba(201,168,76,.15);border-radius:var(--radius-lg);backdrop-filter:blur(6px);}
-.stitle{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);opacity:.8;font-weight:600;}
+.glass{background:rgba(13,35,24,.7);border:1px solid rgba(201,168,76,.15);border-radius:var(--radius-lg);backdrop-filter:blur(6px);box-shadow:0 2px 12px rgba(0,0,0,.25),0 0 0 1px rgba(201,168,76,.04);transition:border-color .2s,box-shadow .2s;}
+@media(min-width:861px){.glass:hover{border-color:rgba(201,168,76,.25);box-shadow:0 4px 20px rgba(0,0,0,.35),0 0 0 1px rgba(201,168,76,.08);}}
+.stitle{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);opacity:.85;font-weight:700;}
 .playing-card{width:48px;height:68px;background:var(--card-bg);border-radius:var(--radius-sm);border:1px solid rgba(255,255,255,.15);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .15s ease;box-shadow:0 4px 12px var(--card-shadow),inset 0 1px 0 rgba(255,255,255,.9);user-select:none;flex-shrink:0;}
 .playing-card:hover{transform:translateY(-4px) scale(1.06);box-shadow:0 10px 24px var(--card-shadow),var(--glow-gold);}
 .playing-card.used{opacity:.4;filter:grayscale(100%);cursor:not-allowed;pointer-events:none;}
@@ -619,6 +638,12 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 @keyframes modeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
 /* Micro-interação: active state nos atalhos rápidos */
 .shortcut-btn:active{transform:scale(.95);}
+/* Acessibilidade: respeitar preferência de movimento reduzido */
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important;}
+  .mode-panel.active{animation:none!important;}
+  .g-fill{transition:none!important;}
+}
 .gauge{position:relative;width:130px;height:130px;display:flex;align-items:center;justify-content:center;}
 .g-svg{transform:rotate(-90deg);}
 .g-track{fill:none;stroke:rgba(255,255,255,.05);stroke-width:10;}
@@ -672,7 +697,8 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 ::-webkit-scrollbar{width:4px;}
 ::-webkit-scrollbar-track{background:var(--felt-edge);}
 ::-webkit-scrollbar-thumb{background:var(--gold-dim);border-radius:3px;}
-select{background:rgba(13,35,24,.9);border:1px solid rgba(201,168,76,.25);color:var(--cream);outline:none;border-radius:6px;padding:6px 10px;font-family:'Rajdhani',sans-serif;font-size:13px;}
+select{background:rgba(13,35,24,.9);border:1px solid rgba(201,168,76,.25);color:var(--cream);outline:none;border-radius:8px;padding:10px 14px;font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:border-color .2s,box-shadow .2s;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23c9a84c' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;}
+select:focus{border-color:rgba(201,168,76,.5);box-shadow:0 0 0 2px rgba(201,168,76,.15);}
 /* ════════════════════════════════════════
    TABLET — 860px
 ════════════════════════════════════════ */
@@ -1090,7 +1116,7 @@ select{background:rgba(13,35,24,.9);border:1px solid rgba(201,168,76,.25);color:
 .tip-btn:hover{background:rgba(201,168,76,.3);border-color:var(--gold);transform:scale(1.1);}
 
 /* ── Quick Hands ── */
-.qh-btn{padding:4px 9px;border-radius:6px;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:11px;letter-spacing:.06em;cursor:pointer;border:1px solid rgba(201,168,76,.2);background:rgba(13,35,24,.8);color:rgba(201,168,76,.7);transition:all .15s;white-space:nowrap;}
+.qh-btn{padding:6px 12px;border-radius:6px;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:12px;letter-spacing:.06em;cursor:pointer;border:1px solid rgba(201,168,76,.2);background:rgba(13,35,24,.8);color:rgba(201,168,76,.7);transition:all .15s;white-space:nowrap;min-height:32px;display:inline-flex;align-items:center;}
 .qh-btn:hover{background:rgba(201,168,76,.15);border-color:rgba(201,168,76,.5);color:var(--gold);}
 .qh-scroll{display:flex;flex-wrap:wrap;gap:4px;padding:2px 0 4px;}
 /* ── EV Calculator ── */
@@ -1294,8 +1320,9 @@ input.ev-input:focus{border-color:var(--gold);}
   color:rgba(201,168,76,.35);transition:all .2s;
 }
 .mob-tab.active{color:var(--gold);}
-.mob-tab-icon{font-size:24px;line-height:1;transition:all .2s;}
-.mob-tab.active .mob-tab-icon{text-shadow:0 0 16px rgba(201,168,76,.8);transform:scale(1.1);}
+.mob-tab-icon{font-size:24px;line-height:1;transition:all .2s;display:flex;align-items:center;justify-content:center;}
+.mob-tab-icon svg{width:22px;height:22px;}
+.mob-tab.active .mob-tab-icon{text-shadow:0 0 16px rgba(201,168,76,.8);transform:scale(1.1);filter:drop-shadow(0 0 6px rgba(201,168,76,.5));}
 .mob-tab.active{color:var(--gold);border-top:2px solid var(--gold);}
 .mob-tab:not(.active){border-top:2px solid transparent;}
 .btn-clear-danger{color:rgba(255,255,255,.3);background:none;border:none;cursor:pointer;font-family:'Rajdhani',sans-serif;letter-spacing:.05em;transition:color .15s;}
@@ -1316,7 +1343,7 @@ input.ev-input:focus{border-color:var(--gold);}
   font-family:'Rajdhani',sans-serif;font-weight:700;font-size:20px;
   width:26px;flex-shrink:0;display:flex;align-items:center;
 }
-.poker-table-wrap{position:relative;width:100%;padding-bottom:32%;min-height:120px;}
+.poker-table-wrap{position:relative;width:100%;padding-bottom:28%;min-height:110px;}
 #cmp-table-panel .poker-table-wrap{padding-bottom:50%;min-height:200px;}
 .poker-table-inner{position:absolute;inset:0;}
 .t-card{position:absolute;background:var(--card-bg);border-radius:5px;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(0,0,0,.65),inset 0 1px 0 rgba(255,255,255,.85);transition:transform .2s,opacity .2s;}
@@ -1373,7 +1400,7 @@ input.ev-input:focus{border-color:var(--gold);}
   <div class="faq-body">
     <!-- Categoria 1: Como usar o PokerCalc -->
     <div class="faq-cat" onclick="toggleFaqCat(this)">
-      <span class="faq-cat-title">📱 Como usar o PokerCalc</span>
+      <span class="faq-cat-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:-2px;margin-right:6px;opacity:.7"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18.01"/></svg>Como usar o PokerCalc</span>
       <span class="faq-chevron">▼</span>
     </div>
     <div class="faq-cat-items">
@@ -1437,7 +1464,7 @@ input.ev-input:focus{border-color:var(--gold);}
 
     <!-- Categoria 2: Aprenda Poker -->
     <div class="faq-cat" onclick="toggleFaqCat(this)">
-      <span class="faq-cat-title">🃏 Aprenda Poker</span>
+      <span class="faq-cat-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:-2px;margin-right:6px;opacity:.7"><rect x="3" y="1" width="13" height="19" rx="2"/><rect x="8" y="4" width="13" height="19" rx="2"/></svg>Aprenda Poker</span>
       <span class="faq-chevron">▼</span>
     </div>
     <div class="faq-cat-items">
@@ -1544,11 +1571,11 @@ input.ev-input:focus{border-color:var(--gold);}
     <span>Calculadora</span>
   </button>
   <button class="mob-tab" id="mob-tab-ev" onclick="switchMode('ev');setMobTab('ev')" role="tab" aria-selected="false" aria-label="Calculadora de valor esperado">
-    <span class="mob-tab-icon" aria-hidden="true">📊</span>
+    <span class="mob-tab-icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
     <span>Vale a Pena?</span>
   </button>
   <button class="mob-tab" id="mob-tab-compare" onclick="switchMode('compare');setMobTab('compare')" role="tab" aria-selected="false" aria-label="Confronto de mãos">
-    <span class="mob-tab-icon" aria-hidden="true">⚔️</span>
+    <span class="mob-tab-icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 00-2 2v3m18-5h-3a2 2 0 00-2 2v3M3 16v3a2 2 0 002 2h3m8 0h3a2 2 0 002-2v-3"/><line x1="12" y1="7" x2="12" y2="17"/><line x1="7" y1="12" x2="17" y2="12"/></svg></span>
     <span>Confronto</span>
   </button>
 </nav>
@@ -1688,7 +1715,7 @@ input.ev-input:focus{border-color:var(--gold);}
     <div class="glass p-5" id="winning-cards-panel" style="display:none">
       <div class="flex items-center justify-between mb-2">
         <div class="flex items-center gap-2">
-          <span style="font-size:15px">⚠️</span>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
           <p class="stitle">Mãos que te Vencem</p>
         </div>
         <span id="beat-badge" class="text-xs font-mono px-2 py-0.5 rounded" style="border:1px solid rgba(231,76,60,.3);background:rgba(231,76,60,.1);color:#e74c3c">—</span>
@@ -1905,7 +1932,7 @@ input.ev-input:focus{border-color:var(--gold);}
 
     <!-- Verdito grande -->
     <div id="ev-verdict" class="verdict-box" style="padding:20px 20px">
-      <div id="ev-icon" style="font-size:48px;margin-bottom:8px;line-height:1">🃏</div>
+      <div id="ev-icon" style="margin-bottom:8px;line-height:1"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:.5"><rect x="3" y="1" width="13" height="19" rx="2"/><rect x="8" y="4" width="13" height="19" rx="2"/></svg></div>
       <div id="ev-title" style="font-family:'Rajdhani',sans-serif;font-size:30px;font-weight:700;letter-spacing:.14em;margin-bottom:8px">Preencha os campos</div>
       <div id="ev-explain" style="font-size:15px;line-height:1.8;color:rgba(255,255,255,.5);max-width:400px;margin:0 auto"></div>
     </div>
@@ -1968,7 +1995,7 @@ input.ev-input:focus{border-color:var(--gold);}
 </div>
 
 </main>
-<footer class="text-center py-3 text-xs font-mono" style="color:rgba(201,168,76,.2);border-top:1px solid rgba(201,168,76,.07)">
+<footer class="text-center py-3 text-xs font-mono" style="color:rgba(201,168,76,.4);border-top:1px solid rgba(201,168,76,.12)">
   <div class="mobile-contact-icons" style="display:none;justify-content:center;gap:16px;margin-bottom:8px;">
     <a href="mailto:pokercalc.suporte@gmail.com" title="Suporte" style="color:rgba(201,168,76,.5);transition:color .2s"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg></a>
     <a href="https://instagram.com/pokercalc" target="_blank" title="Instagram" style="color:rgba(201,168,76,.5);transition:color .2s"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></a>
@@ -2561,6 +2588,11 @@ function showCalcResults(d, isPartial){
   const wcPanel=document.getElementById('winning-cards-panel');
   if(beating_hands){wcPanel.style.display='block';renderBeatingHands(beating_hands);}
   else wcPanel.style.display='none';
+  // Desktop: scroll da coluna direita de volta ao topo para mesa ficar visível
+  if(window.innerWidth>860){
+    const rightCol=document.querySelector('#mode-calc > .cols > .flex-1');
+    if(rightCol) requestAnimationFrame(()=>rightCol.scrollTo({top:0,behavior:'smooth'}));
+  }
 }
 
 function renderBeatingHands(data){
@@ -3153,7 +3185,7 @@ function calcEV(){
 function resetEVDisplay(){
   const vBox = document.getElementById('ev-verdict');
   vBox.className = 'verdict-box';
-  document.getElementById('ev-icon').innerHTML = '<span style="font-size:48px;line-height:1">🃏</span>';
+  document.getElementById('ev-icon').innerHTML = '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:.5"><rect x="3" y="1" width="13" height="19" rx="2"/><rect x="8" y="4" width="13" height="19" rx="2"/></svg>';
   document.getElementById('ev-title').textContent = 'Preencha os campos';
   document.getElementById('ev-title').style.color = 'rgba(255,255,255,.4)';
   document.getElementById('ev-explain').textContent = '';
@@ -3463,60 +3495,77 @@ def pwa_manifest():
     return Response(_json.dumps(m), mimetype='application/manifest+json',
                     headers={'Cache-Control': 'no-cache'})
 
-_SW_JS = """
-const CACHE = 'pokercalc-v1';
-const PRECACHE = ['/'];
+_SW_VERSION = None  # preenchido em _init_sw_version()
 
-// ── Install: pré-cacheia a shell ──
-self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(PRECACHE)).then(() => self.skipWaiting())
-  );
-});
+def _init_sw_version():
+    """Gera versão do SW baseada no hash do HTML para cache bust automático."""
+    global _SW_VERSION
+    import hashlib
+    _SW_VERSION = hashlib.md5(HTML.encode()).hexdigest()[:8]
+
+def _get_sw_js():
+    return f"""
+const CACHE = 'pokercalc-{_SW_VERSION}';
+
+// ── Install: ativa imediatamente ──
+self.addEventListener('install', () => self.skipWaiting());
 
 // ── Activate: remove caches antigos ──
-self.addEventListener('activate', e => {
+self.addEventListener('activate', e => {{
   e.waitUntil(
     caches.keys()
       .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
   );
-});
+}});
 
 // ── Fetch: estratégia híbrida ──
-self.addEventListener('fetch', e => {
+self.addEventListener('fetch', e => {{
   if (e.request.method !== 'GET') return;
   const url = new URL(e.request.url);
   if (url.origin !== location.origin) return;
 
-  // API (cálculos/status): Network First — resultado nunca pode ser stale
-  if (['/calculate', '/compare', '/status'].some(p => url.pathname.startsWith(p))) {
+  // API (cálculos/status): Network Only — resultado nunca pode ser stale
+  if (['/calculate', '/compare', '/status'].some(p => url.pathname.startsWith(p))) {{
     e.respondWith(
       fetch(e.request).catch(() =>
-        new Response(JSON.stringify({error: 'Sem conexão. Tente novamente.'}),
-          {status: 503, headers: {'Content-Type': 'application/json'}})
+        new Response(JSON.stringify({{error: 'Sem conexão. Tente novamente.'}}),
+          {{status: 503, headers: {{'Content-Type': 'application/json'}}}})
       )
     );
     return;
-  }
+  }}
 
-  // HTML shell + assets: Cache First, atualiza em background
+  // Navegação (HTML): Network First — sempre busca versão atualizada
+  if (e.request.mode === 'navigate') {{
+    e.respondWith(
+      fetch(e.request)
+        .then(res => {{
+          if (res.ok) caches.open(CACHE).then(c => c.put(e.request, res.clone()));
+          return res;
+        }})
+        .catch(() => caches.match(e.request).then(c => c || caches.match('/')))
+    );
+    return;
+  }}
+
+  // Assets estáticos: Cache First com fallback para rede
   e.respondWith(
-    caches.match(e.request).then(cached => {
-      const network = fetch(e.request).then(res => {
+    caches.match(e.request).then(cached => {{
+      if (cached) return cached;
+      return fetch(e.request).then(res => {{
         if (res.ok) caches.open(CACHE).then(c => c.put(e.request, res.clone()));
         return res;
-      });
-      return cached || network;
-    })
+      }});
+    }})
   );
-});
+}});
 """
 
 @app.route('/sw.js')
 def service_worker():
     from flask import Response
-    return Response(_SW_JS, mimetype='application/javascript',
+    return Response(_get_sw_js(), mimetype='application/javascript',
                     headers={'Service-Worker-Allowed': '/', 'Cache-Control': 'no-cache, no-store'})
 
 _ERROR_PAGE = """<!DOCTYPE html>
@@ -3526,7 +3575,6 @@ _ERROR_PAGE = """<!DOCTYPE html>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>PokerCalc — {code}</title>
 <link rel="icon" type="image/png" href="/favicon.png"/><link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
-<script nonce="{nonce}" src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet"/>
 <style nonce="{nonce}">
 :root{{--felt:#0d2318;--felt-edge:#071a10;--gold:#c9a84c;--gold-light:#e8c96d;--cream:#f5ead4;}}
@@ -3601,14 +3649,18 @@ if _GA_ID and _re.match(r'^G-[0-9A-Z]{6,}$', _GA_ID):
         f'</script>'
     )
     HTML = HTML.replace(
-        '<script src="https://cdn.tailwindcss.com"></script>',
-        _ga_snippet + '<script src="https://cdn.tailwindcss.com"></script>'
+        '</head>',
+        _ga_snippet + '</head>',
+        1  # só a primeira ocorrência (main HTML)
     )
     print(f'  📊  Google Analytics ativo: {_GA_ID}')
 elif _GA_ID:
     print(f'  ⚠  GA_MEASUREMENT_ID inválido: {_GA_ID} — ignorado')
 else:
     print('  📊  Google Analytics desativado (defina GA_MEASUREMENT_ID no Render para ativar)')
+
+# ── Versão do SW baseada no HTML final (após todas as mutações) ──
+_init_sw_version()
 
 @app.errorhandler(404)
 def not_found(e):
@@ -3640,7 +3692,6 @@ def _legal_page(title, body_html):
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>PokerCalc — {title}</title>
 <link rel="icon" type="image/png" href="/favicon.png"/>
-<script nonce="{nonce}" src="https://cdn.tailwindcss.com"></script>
 <style nonce="{nonce}">
 :root{{--felt:#0d2318;--felt-edge:#071a10;--gold:#c9a84c;--cream:#f5ead4;}}
 *{{box-sizing:border-box;margin:0;padding:0;}}
