@@ -59,7 +59,7 @@ def set_security_headers(response):
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['Content-Security-Policy'] = (
         "default-src 'self'; "
-        f"script-src 'self' 'nonce-{nonce}' https://www.googletagmanager.com https://pagead2.googlesyndication.com; "
+        "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://pagead2.googlesyndication.com; "
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
         "font-src 'self' https://fonts.gstatic.com; "
         "img-src 'self' data: https://www.googletagmanager.com; "
@@ -733,12 +733,9 @@ select:focus{border-color:rgba(201,168,76,.5);box-shadow:0 0 0 2px rgba(201,168,
   #calc-equity-panel{display:none!important;}
   #cmp-hint{display:none!important;}
   #mode-calc > .cols > .flex-1{gap:6px!important;}
-  /* Esconder deck desktop, manter deck mobile visível */
-  #deck-grid-wrap-desktop{display:none!important;}
-  #mode-calc .left-col > .glass:nth-child(2) > .flex.items-center.justify-between{display:none!important;}
-  #mode-calc .left-col > .glass:nth-child(2){padding:0!important;border:none!important;background:none!important;box-shadow:none!important;backdrop-filter:none!important;}
-  #mode-compare .left-col > .glass:nth-child(2) > .flex.items-center.justify-between{display:none!important;}
-  #mode-compare .left-col > .glass:nth-child(2){padding:0!important;border:none!important;background:none!important;box-shadow:none!important;backdrop-filter:none!important;}
+  /* Esconder deck inline — usa bottom sheet ao clicar na carta */
+  #mode-calc .left-col > .glass:nth-child(2){display:none!important;}
+  #mode-compare .left-col > .glass:nth-child(2){display:none!important;}
   /* Sticky equity bar */
   #sticky-equity{
     display:flex!important;
@@ -769,8 +766,9 @@ select:focus{border-color:rgba(201,168,76,.5);box-shadow:0 0 0 2px rgba(201,168,
     transition:transform .3s cubic-bezier(.4,0,.2,1)!important;
     padding:0 0 calc(68px + env(safe-area-inset-bottom,0px))!important;
     overflow-y:auto!important;
+    pointer-events:none!important;
   }
-  #deck-bottom-sheet.open{transform:translateY(0)!important;}
+  #deck-bottom-sheet.open{transform:translateY(0)!important;pointer-events:auto!important;}
   #deck-sheet-backdrop{
     display:none!important;position:fixed!important;inset:0!important;z-index:1000!important;
     background:rgba(0,0,0,.5)!important;
@@ -868,9 +866,8 @@ select:focus{border-color:rgba(201,168,76,.5);box-shadow:0 0 0 2px rgba(201,168,
   /* Painel direito: visível mas sem gap excessivo */
   #mode-calc > .cols > .flex-1{gap:6px!important;}
 
-  /* ── Deck: esconder parte desktop, manter mobile ── */
-  #mode-calc .left-col > .glass:nth-child(2) > .flex.items-center.justify-between{display:none!important;}
-  #mode-calc .left-col > .glass:nth-child(2){padding:0!important;border:none!important;background:none!important;box-shadow:none!important;backdrop-filter:none!important;}
+  /* ── Deck inline escondido — usa bottom sheet ── */
+  #mode-calc .left-col > .glass:nth-child(2){display:none!important;}
 
   /* ── STICKY EQUITY BAR ── */
   #sticky-equity{
@@ -913,8 +910,9 @@ select:focus{border-color:rgba(201,168,76,.5);box-shadow:0 0 0 2px rgba(201,168,
     padding:0 0 calc(68px + env(safe-area-inset-bottom,0px));
     overflow-y:auto;
     -webkit-overflow-scrolling:touch;
+    pointer-events:none;
   }
-  #deck-bottom-sheet.open{transform:translateY(0);}
+  #deck-bottom-sheet.open{transform:translateY(0);pointer-events:auto;}
   #deck-sheet-backdrop{
     display:none;position:fixed;inset:0;z-index:1000;
     background:rgba(0,0,0,.5);
@@ -933,11 +931,15 @@ select:focus{border-color:rgba(201,168,76,.5);box-shadow:0 0 0 2px rgba(201,168,
     color:var(--gold);letter-spacing:.1em;
   }
   #deck-sheet-header .sheet-close{
-    background:none;border:none;color:rgba(255,255,255,.4);
-    font-size:20px;cursor:pointer;padding:4px 8px;
+    background:none;border:none;color:rgba(255,255,255,.6);
+    font-size:24px;cursor:pointer;padding:12px 16px;
     font-family:'Rajdhani',sans-serif;
+    min-width:48px;min-height:48px;
+    display:flex;align-items:center;justify-content:center;
+    -webkit-tap-highlight-color:transparent;
   }
-  #deck-sheet-header .sheet-close:hover{color:#fff;}
+  #deck-sheet-header .sheet-close:hover,
+  #deck-sheet-header .sheet-close:active{color:#fff;background:rgba(255,255,255,.08);border-radius:8px;}
   #deck-sheet-body{padding:8px 12px 12px;}
 
   /* Compactação extra */
@@ -957,8 +959,7 @@ select:focus{border-color:rgba(201,168,76,.5);box-shadow:0 0 0 2px rgba(201,168,
   #mode-compare .cols{display:flex!important;flex-direction:column!important;}
   #mode-compare .left-col{display:contents!important;}
   #mode-compare .left-col > .glass:nth-child(1){order:1;}
-  #mode-compare .left-col > .glass:nth-child(2) > .flex.items-center.justify-between{display:none!important;}
-  #mode-compare .left-col > .glass:nth-child(2){padding:0!important;border:none!important;background:none!important;box-shadow:none!important;backdrop-filter:none!important;}
+  #mode-compare .left-col > .glass:nth-child(2){display:none!important;}
   #mode-compare .cols > .flex-1{order:2;}
 
   /* Vale a Pena? — mobile */
@@ -1592,11 +1593,11 @@ input.ev-input:focus{border-color:var(--gold);}
   <span class="seq-hand" id="seq-hand"></span>
 </div>
 <!-- DECK BOTTOM SHEET (mobile only) -->
-<div id="deck-sheet-backdrop" onclick="closeDeckSheet()"></div>
+<div id="deck-sheet-backdrop"></div>
 <div id="deck-bottom-sheet" style="display:none">
   <div id="deck-sheet-header">
     <span class="sheet-title">SELECIONE UMA CARTA</span>
-    <button class="sheet-close" onclick="closeDeckSheet()">✕</button>
+    <button class="sheet-close" id="sheet-close-btn">✕</button>
   </div>
   <div id="deck-sheet-body"></div>
 </div>
@@ -2114,17 +2115,18 @@ function buildMobileDeck(){
 
 // ── DECK BOTTOM SHEET (mobile) ──
 let _sheetMode='calc'; // 'calc' ou 'cmp'
+let _sheetCooldown=false;
 function openDeckSheet(mode){
   _sheetMode=mode||'calc';
   if(!isCompact()) return;
+  if(_sheetCooldown) return;
   const sheet=document.getElementById('deck-bottom-sheet');
   const backdrop=document.getElementById('deck-sheet-backdrop');
   if(!sheet||!backdrop) return;
-  sheet.style.display='block';
-  backdrop.style.display='block';
-  // Build deck inside sheet
+  if(sheet.classList.contains('open')) return; // already open
+  sheet.style.pointerEvents='';
+  backdrop.style.pointerEvents='';
   buildSheetDeck();
-  // Trigger animation
   requestAnimationFrame(()=>{
     sheet.classList.add('open');
     backdrop.classList.add('open');
@@ -2136,8 +2138,18 @@ function closeDeckSheet(){
   if(!sheet||!backdrop) return;
   sheet.classList.remove('open');
   backdrop.classList.remove('open');
-  setTimeout(()=>{sheet.style.display='none';backdrop.style.display='none';},300);
+  sheet.style.pointerEvents='none';
+  backdrop.style.pointerEvents='none';
+  _sheetCooldown=true;
+  setTimeout(()=>{_sheetCooldown=false;},450);
 }
+// Attach sheet close listeners via JS (CSP blocks inline onclick attributes)
+(function(){
+  const closeBtn=document.getElementById('sheet-close-btn');
+  const backdrop=document.getElementById('deck-sheet-backdrop');
+  if(closeBtn) closeBtn.addEventListener('click',function(e){e.stopPropagation();closeDeckSheet();});
+  if(backdrop) backdrop.addEventListener('click',function(){closeDeckSheet();});
+})();
 function buildSheetDeck(){
   const body=document.getElementById('deck-sheet-body');
   if(!body) return;
