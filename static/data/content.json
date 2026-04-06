@@ -1,0 +1,56 @@
+{
+  "faq": [
+    {
+      "title": "Como usar o PokerCalc",
+      "icon": "phone",
+      "items": [
+        {
+          "q": "Como usar a Calculadora",
+          "a": "<p><strong>1.</strong> Clique nos slots de <strong>Sua Mão</strong> para selecionar suas 2 cartas privadas do deck.</p><p><strong>2.</strong> Adicione as cartas do <strong>Board</strong> (Flop, Turn, River) conforme a rodada avança.</p><p><strong>3.</strong> Escolha o número de <strong>oponentes</strong> e clique em <strong>Calcular Odds</strong>.</p><p><strong>4.</strong> Veja os resultados: <strong>Vitória</strong> (chance de ganhar), <strong>Empate</strong> e <strong>Derrota</strong>.</p><p>Você também pode usar os <strong>Atalhos Rápidos</strong> (AA, KK, QQ...) para preencher sua mão com um clique.</p>"
+        },
+        {
+          "q": "Como usar o Confronto",
+          "a": "<p>O modo <strong>Confronto</strong> compara a equity de duas ou mais mãos específicas entre si.</p><p><strong>1.</strong> Selecione as cartas do <strong>Jogador 1</strong> e do <strong>Jogador 2</strong>.</p><p><strong>2.</strong> Adicione cartas do board se quiser simular um cenário específico.</p><p><strong>3.</strong> Clique em <strong>Comparar</strong> para ver quem tem mais chance de ganhar.</p><p>Ideal para estudar situações como AK vs QQ ou quando quer saber quem é favorito em um all-in.</p>"
+        },
+        {
+          "q": "Como funciona o Vale a Pena (EV)",
+          "a": "<p><strong>EV (Expected Value)</strong> calcula se uma jogada é lucrativa a longo prazo.</p><p><strong>1.</strong> Informe o tamanho do <strong>pote</strong> atual.</p><p><strong>2.</strong> Informe o valor da <strong>aposta</strong> que você precisa pagar (call).</p><p><strong>3.</strong> Informe sua <strong>equity</strong> (use a calculadora para descobrir).</p><p>Se o <strong>EV for positivo (+)</strong>, a jogada é lucrativa. Se for <strong>negativo (−)</strong>, você perde dinheiro a longo prazo fazendo esse call.</p>"
+        },
+        {
+          "q": "O que são Outs e Equity",
+          "a": "<p><strong>Equity</strong> é a sua porcentagem de chance de ganhar a mão se ela fosse jogada até o final milhares de vezes. Ex: 70% de equity = você ganha 7 em cada 10 cenários.</p><p><strong>Outs</strong> são as cartas restantes no deck que completam o seu draw (mão incompleta). Ex: se você tem um flush draw (4 cartas do mesmo naipe), restam <strong>9 outs</strong> para completar.</p><p><strong>Regra rápida:</strong> Multiplique seus outs por 2 para a chance no próximo street, ou por 4 para Turn + River juntos.</p>"
+        },
+        {
+          "q": "O que é Pot Odds",
+          "a": "<p><strong>Pot Odds</strong> é a relação entre o valor que você precisa pagar e o tamanho total do pote.</p><p><strong>Exemplo:</strong> O pote tem R$100 e o oponente aposta R$50. Você precisa pagar R$50 para ganhar R$150 (pote + aposta). Suas pot odds são 50/150 = <strong>33%</strong>.</p><p><strong>Regra:</strong> Se sua equity for <strong>maior</strong> que suas pot odds, o call é lucrativo. Se for menor, você deve dar fold.</p><p>Use a aba <strong>Vale a Pena?</strong> para calcular isso automaticamente!</p>"
+        }
+      ]
+    },
+    {
+      "title": "Aprenda Poker",
+      "icon": "cards",
+      "items": [
+        {
+          "q": "Regras do Texas Hold'em",
+          "a": "<p>Cada jogador recebe <strong>2 cartas privadas</strong> (hole cards). Em seguida, 5 cartas comunitárias são reveladas em etapas:</p><ul><li><strong>Pré-Flop:</strong> Cada jogador recebe suas 2 cartas. Primeira rodada de apostas.</li><li><strong>Flop:</strong> 3 cartas comunitárias são reveladas. Segunda rodada de apostas.</li><li><strong>Turn:</strong> A 4ª carta comunitária é revelada. Terceira rodada de apostas.</li><li><strong>River:</strong> A 5ª e última carta comunitária é revelada. Rodada final de apostas.</li><li><strong>Showdown:</strong> Jogadores mostram suas cartas. A melhor mão de 5 cartas ganha.</li></ul><p>Você pode usar qualquer combinação das suas 2 cartas + as 5 do board para formar a melhor mão de 5 cartas.</p>"
+        },
+        {
+          "q": "Ranking de Mãos",
+          "a": "<p>Da mais forte para a mais fraca:</p><div class=\"faq-hand-list\"><span><strong>1.</strong> Royal Flush — A K Q J 10 do mesmo naipe</span><span><strong>2.</strong> Straight Flush — Sequência do mesmo naipe</span><span><strong>3.</strong> Quadra — 4 cartas iguais</span><span><strong>4.</strong> Full House — Trinca + Par</span><span><strong>5.</strong> Flush — 5 cartas do mesmo naipe</span><span><strong>6.</strong> Straight — 5 cartas em sequência</span><span><strong>7.</strong> Trinca — 3 cartas iguais</span><span><strong>8.</strong> Dois Pares — 2 pares diferentes</span><span><strong>9.</strong> Par — 2 cartas iguais</span><span><strong>10.</strong> Carta Alta — Nenhuma combinação</span></div>"
+        },
+        {
+          "q": "Posições na Mesa",
+          "a": "<p>A posição influencia diretamente sua estratégia:</p><ul><li><strong>UTG (Under the Gun):</strong> Primeiro a agir. Jogue apenas mãos premium (AA, KK, QQ, AK).</li><li><strong>MP (Middle Position):</strong> Posição intermediária. Pode abrir um pouco mais.</li><li><strong>CO (Cutoff):</strong> Penúltimo antes do dealer. Boa posição para roubar blinds.</li><li><strong>BTN (Button/Dealer):</strong> Melhor posição! Você age por último após o flop. Jogue mais mãos.</li><li><strong>SB (Small Blind):</strong> Aposta obrigatória pequena. Posição ruim pós-flop.</li><li><strong>BB (Big Blind):</strong> Aposta obrigatória grande. Já tem dinheiro no pote, pode defender mais.</li></ul><p><strong>Dica:</strong> Quanto mais tarde você age, mais informação tem. Jogue mais mãos em posição tardia!</p>"
+        },
+        {
+          "q": "Estratégia Básica",
+          "a": "<p><strong>Estilo Tight-Aggressive (TAG):</strong> O mais recomendado para iniciantes.</p><ul><li><strong>Tight:</strong> Jogue poucas mãos, apenas as boas. Não entre em todo pote.</li><li><strong>Aggressive:</strong> Quando jogar, aposte e dê raise. Evite só dar call (limpar).</li><li><strong>Posição importa:</strong> Jogue mais mãos no BTN/CO e menos no UTG/SB.</li><li><strong>Use pot odds:</strong> Só pague apostas quando a matemática está a seu favor.</li><li><strong>Não blefe demais:</strong> Contra iniciantes, jogue suas cartas. Blefe pouco e em boas situações.</li><li><strong>Controle o pote:</strong> Com mãos médias, mantenha o pote pequeno. Com mãos fortes, aposte para valor.</li></ul>"
+        },
+        {
+          "q": "Glossário de Termos",
+          "a": "<ul><li><span class=\"faq-term\">All-in</span> — Apostar todas as suas fichas.</li><li><span class=\"faq-term\">Blind</span> — Aposta obrigatória antes das cartas serem distribuídas.</li><li><span class=\"faq-term\">Call</span> — Pagar a aposta do oponente.</li><li><span class=\"faq-term\">Check</span> — Passar a vez sem apostar (só quando ninguém apostou).</li><li><span class=\"faq-term\">Fold</span> — Desistir da mão.</li><li><span class=\"faq-term\">Raise</span> — Aumentar a aposta.</li><li><span class=\"faq-term\">Pot</span> — O total de fichas acumuladas no centro da mesa.</li><li><span class=\"faq-term\">Nuts</span> — A melhor mão possível com o board atual.</li><li><span class=\"faq-term\">Draw</span> — Mão incompleta que precisa de mais uma carta.</li><li><span class=\"faq-term\">Outs</span> — Cartas que completam seu draw.</li><li><span class=\"faq-term\">Equity</span> — Sua porcentagem de chance de ganhar.</li><li><span class=\"faq-term\">EV</span> — Expected Value, o valor esperado de uma jogada a longo prazo.</li><li><span class=\"faq-term\">Muck</span> — Não mostrar suas cartas ao desistir.</li><li><span class=\"faq-term\">Showdown</span> — Momento de mostrar as cartas para decidir o vencedor.</li><li><span class=\"faq-term\">Tilt</span> — Jogar mal por estar emocionalmente abalado.</li></ul>"
+        }
+      ]
+    }
+  ]
+}

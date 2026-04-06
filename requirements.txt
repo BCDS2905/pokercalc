@@ -1,3 +1,7 @@
 flask
+flask-compress
+brotli
 gunicorn
 pybind11
+rjsmin
+rcssmin

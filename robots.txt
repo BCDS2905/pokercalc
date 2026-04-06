@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /status/
+Disallow: /calculate
+Disallow: /compare
+
+Sitemap: https://pokercalc.com.br/sitemap.xml

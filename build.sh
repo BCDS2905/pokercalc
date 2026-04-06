@@ -102,4 +102,32 @@ while i + 1 < len(segments):
 print(f'  ✓ {downloaded}/{len(FONT_MAP)} fontes prontas')
 PYEOF
 
+echo "==> Minificando JS/CSS para produção..."
+$PYTHON - <<'PYEOF'
+import os, sys
+try:
+    import rjsmin, rcssmin
+except ImportError:
+    print('  ⚠  rjsmin/rcssmin não instalados — pulando minificação')
+    sys.exit(0)
+
+targets = [
+    ('static/js/main.js',   'static/js/main.min.js',   rjsmin.jsmin),
+    ('static/js/pwa.js',    'static/js/pwa.min.js',    rjsmin.jsmin),
+    ('static/css/main.css', 'static/css/main.min.css', rcssmin.cssmin),
+    ('static/css/pages.css','static/css/pages.min.css',rcssmin.cssmin),
+    ('static/css/fonts.css','static/css/fonts.min.css',rcssmin.cssmin),
+]
+for src, dst, fn in targets:
+    if not os.path.exists(src):
+        print(f'  ↩ {src} (não existe)')
+        continue
+    raw = open(src).read()
+    mini = fn(raw)
+    open(dst,'w').write(mini)
+    rs, ms = len(raw), len(mini)
+    pct = 100*(1-ms/rs) if rs else 0
+    print(f'  ✓ {dst}  {rs:>8} → {ms:>8} bytes  (-{pct:.1f}%)')
+PYEOF
+
 echo "==> Pronto!"
