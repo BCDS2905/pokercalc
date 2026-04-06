@@ -61,7 +61,7 @@ HandVal eval5(int c0,int c1,int c2,int c3,int c4) {
     bool st = false; int st_high = 0;
     if (mask == WHEEL_MASK) { st=true; st_high=3; }
     else {
-        for (int i=1;i<=9;i++) {
+        for (int i=0;i<=9;i++) {
             if (mask == (uint32_t)(0b11111u<<i)) { st=true; st_high=i+3; break; }
         }
     }
@@ -184,11 +184,13 @@ std::vector<double> monte_carlo(
         else losses++;
     }
 
-    return {
-        std::round(wins  *1000.0/n_sims)/10.0,
-        std::round(ties  *1000.0/n_sims)/10.0,
-        std::round(losses*1000.0/n_sims)/10.0
-    };
+    // Deriva 'lose' subtraindo win+tie de 100 para garantir soma exata = 100.0
+    double w = std::round(wins*1000.0/n_sims)/10.0;
+    double t = std::round(ties*1000.0/n_sims)/10.0;
+    double l = std::round((100.0 - w - t)*10.0)/10.0;
+    if (l <= 0.0) l = 0.0;
+    if (l > 100.0) l = 100.0;
+    return { w, t, l };
 }
 
 // ─── Monte Carlo Multi ────────────────────────────────────
@@ -244,12 +246,15 @@ std::vector<std::vector<double>> monte_carlo_multi(
     }
 
     std::vector<std::vector<double>> result(nh);
-    for (int i=0;i<nh;i++)
-        result[i]={
-            std::round(wins[i]  *1000.0/n_sims)/10.0,
-            std::round(ties[i]  *1000.0/n_sims)/10.0,
-            std::round(losses[i]*1000.0/n_sims)/10.0
-        };
+    for (int i=0;i<nh;i++) {
+        // Deriva 'lose' subtraindo win+tie de 100 para garantir soma exata = 100.0
+        double w = std::round(wins[i]*1000.0/n_sims)/10.0;
+        double t = std::round(ties[i]*1000.0/n_sims)/10.0;
+        double l = std::round((100.0 - w - t)*10.0)/10.0;
+        if (l <= 0.0) l = 0.0;
+        if (l > 100.0) l = 100.0;
+        result[i] = { w, t, l };
+    }
     return result;
 }
 

@@ -295,7 +295,11 @@ def monte_carlo(hole, board, opponents=1, n=10000, cb=None):
         try:
             res = _cpp.monte_carlo(hole, board, opponents, n)
             if cb: cb(90)
-            return {'win': res[0], 'tie': res[1], 'lose': res[2]}
+            w = res[0]; t = res[1]
+            l = round(100.0 - w - t, 1)
+            if l <= 0.0: l = 0.0
+            if l > 100.0: l = 100.0
+            return {'win': w, 'tie': t, 'lose': l}
         except Exception as e:
             print(f"  ⚠  C++ erro: {e} — caindo para Python")
             _USE_CPP = False
@@ -313,7 +317,11 @@ def monte_carlo(hole, board, opponents=1, n=10000, cb=None):
         elif mine==best_opp: ties+=1
         else: losses+=1
         if cb and (i+1)%step==0: cb(int((i+1)/n*90))
-    return {'win':round(wins/n*100,1),'tie':round(ties/n*100,1),'lose':round(losses/n*100,1)}
+    w = round(wins/n*100, 1); t = round(ties/n*100, 1)
+    l = round(100.0 - w - t, 1)
+    if l <= 0.0: l = 0.0
+    if l > 100.0: l = 100.0
+    return {'win': w, 'tie': t, 'lose': l}
 
 def get_draws(hole, board):
     if 5-len(board)<=0: return {}
@@ -359,7 +367,14 @@ def monte_carlo_multi(hands, board=[], n=10000, cb=None):
         try:
             res = _cpp.monte_carlo_multi(hands, list(board), n)
             if cb: cb(100)
-            return [{'win':r[0],'tie':r[1],'lose':r[2]} for r in res]
+            out = []
+            for r in res:
+                w = r[0]; t = r[1]
+                l = round(100.0 - w - t, 1)
+                if l <= 0.0: l = 0.0
+                if l > 100.0: l = 100.0
+                out.append({'win': w, 'tie': t, 'lose': l})
+            return out
         except Exception as e:
             print(f"  ⚠  C++ erro multi: {e} — caindo para Python")
             _USE_CPP = False
@@ -383,7 +398,14 @@ def monte_carlo_multi(hands, board=[], n=10000, cb=None):
             for j in range(nh):
                 if j not in winners: losses[j]+=1
         if cb and (i+1)%step==0: cb(int((i+1)/n*100))
-    return [{'win':round(wins[i]/n*100,1),'tie':round(ties[i]/n*100,1),'lose':round(losses[i]/n*100,1)} for i in range(nh)]
+    out = []
+    for i in range(nh):
+        w = round(wins[i]/n*100, 1); t = round(ties[i]/n*100, 1)
+        l = round(100.0 - w - t, 1)
+        if l <= 0.0: l = 0.0
+        if l > 100.0: l = 100.0
+        out.append({'win': w, 'tie': t, 'lose': l})
+    return out
 
 def get_beating_hands(hole, board):
     if not board: return None
