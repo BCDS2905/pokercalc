@@ -716,6 +716,7 @@ HTML = r"""<!DOCTYPE html>
     <button class="faq-close" onclick="toggleFAQ()" aria-label="Fechar">✕</button>
   </div>
   <div class="faq-body" id="faq-container" data-loaded="0"></div>
+</div>
 
 <!-- BOTTOM NAV — só aparece em mobile (≤600px) -->
 <nav id="mobile-bottom-nav" role="tablist" aria-label="Navegação principal" style="display:none">
