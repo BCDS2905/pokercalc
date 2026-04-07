@@ -22,7 +22,7 @@ except ImportError:
     _USE_CPP = False
     print(f"  ⚠  evaluator.so não encontrado em {_APP_DIR} — usando Python puro")
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder=os.path.join(_APP_DIR, 'static'), static_url_path='/static')
 
 # ── Compressão Gzip/Brotli de respostas ──
 try:
@@ -80,7 +80,9 @@ def set_security_headers(response):
     response.headers['Cross-Origin-Resource-Policy'] = 'same-origin'
     # CSP restritivo — sem 'unsafe-inline' em script-src (todo JS é externo)
     # GA carrega via tag injetada; permitido por host. Inline GA bootstrap usa nonce.
-    response.headers['Content-Security-Policy'] = (
+    # TEMP: CSP desativado para diagnóstico de deploy
+    _csp_disabled = True
+    if not _csp_disabled: response.headers['Content-Security-Policy'] = (
         "default-src 'self'; "
         f"script-src 'self' 'nonce-{nonce}' https://www.googletagmanager.com https://pagead2.googlesyndication.com; "
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
@@ -1198,12 +1200,12 @@ _ICON_512  = _b64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYAAAD0eNT6AAA680l
 @app.route('/robots.txt')
 def robots_txt():
     from flask import send_from_directory
-    return send_from_directory('.', 'robots.txt', mimetype='text/plain')
+    return send_from_directory(_APP_DIR, 'robots.txt', mimetype='text/plain')
 
 @app.route('/sitemap.xml')
 def sitemap_xml():
     from flask import send_from_directory
-    return send_from_directory('.', 'sitemap.xml', mimetype='application/xml')
+    return send_from_directory(_APP_DIR, 'sitemap.xml', mimetype='application/xml')
 
 @app.route('/favicon.ico')
 @app.route('/favicon.png')
