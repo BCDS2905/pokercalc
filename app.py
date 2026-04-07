@@ -80,9 +80,14 @@ def set_security_headers(response):
     response.headers['Cross-Origin-Resource-Policy'] = 'same-origin'
     # CSP restritivo — sem 'unsafe-inline' em script-src (todo JS é externo)
     # GA carrega via tag injetada; permitido por host. Inline GA bootstrap usa nonce.
+    # NOTA: 'unsafe-inline' necessário porque o HTML usa ~36 handlers inline (onclick=...).
+    # Nonce não pode coexistir com 'unsafe-inline' (CSP Level 2+ ignora o segundo), e
+    # atributos de evento HTML nunca recebem nonce. Refatoração futura: mover listeners
+    # para main.js com addEventListener. Por ora mantém 'unsafe-inline' (proteção XSS
+    # reduzida mas site funcional; demais diretivas continuam restritivas).
     response.headers['Content-Security-Policy'] = (
         "default-src 'self'; "
-        f"script-src 'self' 'nonce-{nonce}' https://www.googletagmanager.com https://pagead2.googlesyndication.com; "
+        "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://pagead2.googlesyndication.com; "
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
         "font-src 'self' https://fonts.gstatic.com; "
         "img-src 'self' data: https://www.googletagmanager.com https://www.google-analytics.com; "
