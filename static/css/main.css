@@ -794,3 +794,108 @@ input.ev-input:focus{border-color:var(--gold);}
   /* Footer fixo no bottom */
   footer{position:sticky;bottom:0;z-index:100;background:rgba(7,20,12,.98);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
 }
+
+/* ═══════════════════════════════════════════════════════
+   CARD DE PARCERIA (Hotmart — Algoritmo do Poker 2026)
+   Formato IAB Medium Rectangle responsivo. Aparece via
+   JS após 1º cálculo bem-sucedido (body.pc-has-result).
+   ═══════════════════════════════════════════════════════ */
+.pc-affiliate{
+  display:none;
+  max-width:340px;
+  margin:0 auto;
+  padding:18px 20px 16px;
+  background:linear-gradient(160deg, rgba(12,36,22,.92) 0%, rgba(7,20,12,.96) 100%);
+  border:1px solid rgba(212,162,58,.35);
+  border-radius:12px;
+  box-shadow:0 4px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(212,162,58,.08);
+  text-align:left;
+  font-family:'Rajdhani',system-ui,sans-serif;
+  position:relative;
+  overflow:hidden;
+}
+body.pc-has-result .pc-affiliate{ display:block; animation:pcAffFadeIn .5s ease-out; }
+@keyframes pcAffFadeIn{ from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+.pc-aff-badge{
+  display:inline-block;
+  font-size:9px; letter-spacing:.18em; font-weight:700;
+  color:#d4a23a;
+  padding:3px 8px; margin-bottom:10px;
+  background:rgba(212,162,58,.08);
+  border:1px solid rgba(212,162,58,.25);
+  border-radius:20px;
+  font-family:'JetBrains Mono',monospace;
+}
+.pc-aff-title{
+  font-size:17px; line-height:1.25; font-weight:700;
+  color:#f5e9c9; margin:0 0 10px;
+  letter-spacing:.005em;
+}
+.pc-aff-desc{
+  font-size:13px; line-height:1.5;
+  color:rgba(255,255,255,.65);
+  margin:0 0 14px;
+}
+.pc-aff-desc strong{ color:#f5e9c9; font-weight:600; }
+.pc-aff-tags{
+  display:block; margin-top:6px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px; letter-spacing:.08em;
+  color:rgba(212,162,58,.7);
+}
+.pc-aff-cta{
+  display:block;
+  width:100%;
+  padding:11px 18px;
+  background:linear-gradient(180deg,#d4a23a 0%,#b48628 100%);
+  color:#0c2416 !important;
+  font-family:'Rajdhani',sans-serif;
+  font-weight:700; font-size:14px;
+  letter-spacing:.08em; text-transform:uppercase;
+  text-align:center; text-decoration:none;
+  border:none; border-radius:8px;
+  box-shadow:0 2px 10px rgba(212,162,58,.25);
+  transition:transform .15s ease, box-shadow .15s ease, filter .15s ease;
+  cursor:pointer;
+}
+.pc-aff-cta:hover,.pc-aff-cta:focus-visible{
+  transform:translateY(-1px);
+  box-shadow:0 4px 16px rgba(212,162,58,.4);
+  filter:brightness(1.08);
+  outline:none;
+}
+.pc-aff-disc{
+  display:block;
+  margin-top:10px;
+  font-size:10px; line-height:1.4;
+  color:rgba(255,255,255,.32);
+  letter-spacing:.02em;
+  font-family:system-ui,sans-serif;
+  text-align:center;
+}
+/* Hint textual dentro do modo EV */
+.pc-aff-hint{
+  margin:14px 0 4px;
+  padding:10px 14px;
+  font-size:12px; line-height:1.5;
+  color:rgba(255,255,255,.5);
+  background:rgba(212,162,58,.04);
+  border-left:2px solid rgba(212,162,58,.4);
+  border-radius:4px;
+  text-align:center;
+  font-family:'Rajdhani',system-ui,sans-serif;
+  letter-spacing:.01em;
+}
+.pc-aff-hint a{
+  color:#d4a23a; font-weight:600; text-decoration:none;
+  margin-left:4px; white-space:nowrap;
+}
+.pc-aff-hint a:hover,.pc-aff-hint a:focus-visible{
+  color:#e8c96d; text-decoration:underline;
+}
+/* Mobile: full-width */
+@media (max-width:860px){
+  .pc-affiliate{ max-width:100%; margin:12px 0; padding:16px 16px 14px; }
+  .pc-aff-title{ font-size:16px; }
+  .pc-aff-hint{ margin:12px 0 2px; font-size:11px; padding:8px 12px; }
+}

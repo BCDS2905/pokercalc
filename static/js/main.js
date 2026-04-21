@@ -581,6 +581,8 @@ function showCalcResults(d, isPartial){
   document.getElementById('win-pct').textContent=eq.win+'%';
   document.getElementById('tie-pct').textContent=eq.tie+'%';
   document.getElementById('lose-pct').textContent=eq.lose+'%';
+  // Revela card de parceria após 1º cálculo concluído (não em estimativas parciais)
+  if(!isPartial) document.body.classList.add('pc-has-result');
   syncStickyEquity();
   document.getElementById('eq-bars').style.display='block';
   setTimeout(()=>{document.getElementById('bw').style.width=eq.win+'%';document.getElementById('bt').style.width=eq.tie+'%';document.getElementById('bl').style.width=eq.lose+'%';},50);
@@ -1445,3 +1447,17 @@ function toggleFaqItem(el){
   }
 }
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){const s=document.getElementById('faq-sheet');if(s.classList.contains('faq-open'))toggleFAQ();}});
+
+/* ─── Tracking de clique em links de parceria (Hotmart) ─── */
+function trackAffClick(slot){
+  try{
+    if(typeof gtag==='function'){
+      gtag('event','affiliate_click',{
+        slot:slot,
+        product:'algoritmo_poker_2026',
+        network:'hotmart'
+      });
+    }
+  }catch(_){/* nunca bloqueia navegação */}
+  return true; // deixa o <a> seguir normalmente
+}

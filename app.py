@@ -966,6 +966,25 @@ HTML = r"""<!DOCTYPE html>
       <p class="text-xs mb-4" style="color:rgba(255,255,255,.3);line-height:1.5">Todos os pares possíveis no deck que superam sua mão atual.</p>
       <div id="winning-cards-box" style="max-height:35vh;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:8px;"></div>
     </div>
+
+    <!-- ═══ CARD DE PARCERIA (aparece após 1º cálculo) ═══ -->
+    <aside id="pc-affiliate-card" class="pc-affiliate" aria-label="Parceria comercial" hidden>
+      <div class="pc-aff-badge">📕 GUIA OFICIAL · PARCERIA</div>
+      <h3 class="pc-aff-title">Você calculou a equity.<br/>Agora aprenda a lucrar com ela.</h3>
+      <p class="pc-aff-desc">
+        <strong>O Algoritmo do Poker (2026)</strong> — o manual que explica cada conceito que você calcula aqui.
+        <span class="pc-aff-tags">EV · GTO · ICM · Kelly · 50+ exemplos</span>
+      </p>
+      <a class="pc-aff-cta"
+         href="https://go.hotmart.com/Y105182397D?src=pokercalc&amp;utm_source=pokercalc&amp;utm_medium=result_card&amp;utm_campaign=algoritmo_poker_2026"
+         target="_blank" rel="sponsored noopener noreferrer"
+         onclick="trackAffClick('result_card')">
+        Conhecer o guia →
+      </a>
+      <small class="pc-aff-disc">Parceria comercial — ao comprar, recebemos comissão.</small>
+    </aside>
+    <!-- ═══ /CARD DE PARCERIA ═══ -->
+
     <!-- Referência compacta — linha única -->
     <div class="glass px-4 py-3 ref-table-wrap">
       <div class="flex items-center justify-between flex-wrap gap-2">
@@ -1195,6 +1214,14 @@ HTML = r"""<!DOCTYPE html>
         <div id="ev-stat-ev" style="font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:700">—</div>
       </div>
     </div>
+
+    <!-- Linha textual de afiliado (discreta) -->
+    <p class="pc-aff-hint">
+      Quer dominar EV em 50+ cenários reais?
+      <a href="https://go.hotmart.com/Y105182397D?src=pokercalc&amp;utm_source=pokercalc&amp;utm_medium=ev_textlink&amp;utm_campaign=algoritmo_poker_2026"
+         target="_blank" rel="sponsored noopener noreferrer"
+         onclick="trackAffClick('ev_textlink')">Veja o guia oficial →</a>
+    </p>
 
     <!-- Barra dupla equity vs mínimo -->
     <div class="glass p-4" id="ev-bar-panel" style="display:none">
