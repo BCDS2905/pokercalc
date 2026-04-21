@@ -109,7 +109,17 @@ def set_security_headers(response):
 
     # ── Cache-Control por tipo de conteúdo ──
     path = request.path
-    if path in ('/favicon.svg', '/favicon.ico', '/favicon.png', '/apple-touch-icon.png', '/apple-touch-icon-precomposed.png'):
+    if path.startswith('/static/'):
+        # Assets com hash/versão estável: cache agressivo de 1 ano + immutable
+        if path.endswith(('.min.js', '.min.css')) or '/fonts/' in path:
+            response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
+        elif path.endswith('.json'):
+            # content.json: revalidável, 1h
+            response.headers['Cache-Control'] = 'public, max-age=3600'
+        else:
+            # demais estáticos (.js/.css não-minificado, imagens): 1 dia
+            response.headers['Cache-Control'] = 'public, max-age=86400'
+    elif path in ('/favicon.svg', '/favicon.ico', '/favicon.png', '/apple-touch-icon.png', '/apple-touch-icon-precomposed.png'):
         # favicon: cache por 7 dias
         response.headers['Cache-Control'] = 'public, max-age=604800, immutable'
     elif path == '/healthcheck':
@@ -122,21 +132,8 @@ def set_security_headers(response):
         # APIs de cálculo: sem cache
         response.headers['Cache-Control'] = 'no-store'
 
-    # ── Compressão Gzip ──
-    # Comprime respostas HTML/JSON grandes se o cliente aceitar
-    if (response.status_code == 200
-            and 'gzip' in request.headers.get('Accept-Encoding', '')
-            and not response.direct_passthrough
-            and len(response.get_data()) > 1000):
-        content_type = response.content_type.lower()
-        if any(t in content_type for t in ('text/', 'application/json', 'image/svg')):
-            buf = io.BytesIO()
-            with gzip.GzipFile(mode='wb', fileobj=buf, compresslevel=6) as gz:
-                gz.write(response.get_data())
-            response.set_data(buf.getvalue())
-            response.headers['Content-Encoding'] = 'gzip'
-            response.headers['Content-Length']   = len(response.get_data())
-            response.headers['Vary']              = 'Accept-Encoding'
+    # (Bloco de compressão Gzip manual removido: Flask-Compress já cuida
+    # de Brotli + gzip com negociação correta de Accept-Encoding.)
 
     return response
 
@@ -630,6 +627,10 @@ HTML = r"""<!DOCTYPE html>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
 <meta name="description" content="Calculadora de probabilidades de poker Texas Hold'em — equity, pot odds, confronto de mãos."/>
 <meta name="theme-color" content="#071a10"/>
+<meta name="color-scheme" content="dark"/>
+<link rel="preload" href="/static/fonts/rajdhani-600.woff2" as="font" type="font/woff2" crossorigin/>
+<link rel="preload" href="/static/fonts/rajdhani-500.woff2" as="font" type="font/woff2" crossorigin/>
+<link rel="preload" href="/static/fonts/jetbrainsmono-500.woff2" as="font" type="font/woff2" crossorigin/>
 <meta name="author" content="PokerCalc"/>
 <meta name="keywords" content="poker, calculadora de poker, texas hold'em, equity, pot odds, odds, confronto de mãos, probabilidade poker, monte carlo poker"/>
 <link rel="canonical" href="https://pokercalc.com.br/"/>
@@ -678,6 +679,88 @@ HTML = r"""<!DOCTYPE html>
 }
 </script>
 
+<!-- FAQ rich results (Schema.org FAQPage) -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Como usar a Calculadora de Poker",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Clique nos slots de Sua Mão para selecionar suas 2 cartas privadas. Adicione as cartas do Board (Flop, Turn, River) conforme a rodada avança. Escolha o número de oponentes e clique em Calcular Odds para ver Vitória, Empate e Derrota."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Como funciona o modo Confronto de mãos?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "O modo Confronto compara a equity de duas ou mais mãos específicas entre si. Selecione as cartas do Jogador 1 e do Jogador 2, adicione cartas do board se desejar, e clique em Comparar para ver quem tem mais chance de ganhar."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "O que é EV (Expected Value) no poker?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "EV (Expected Value) calcula se uma jogada é lucrativa a longo prazo. Informe o tamanho do pote, o valor da aposta e sua equity. Se o EV for positivo, a jogada é lucrativa; se negativo, você perde dinheiro a longo prazo."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "O que são Outs e Equity?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Equity é a porcentagem de chance de ganhar a mão. Outs são as cartas restantes no deck que completam seu draw. Regra rápida: multiplique seus outs por 2 para a chance no próximo street, ou por 4 para Turn + River juntos."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "O que é Pot Odds?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Pot Odds é a relação entre o valor que você precisa pagar e o tamanho total do pote. Se sua equity for maior que suas pot odds, o call é lucrativo. Se for menor, você deve dar fold."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Quais são as regras do Texas Hold'em?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Cada jogador recebe 2 cartas privadas. Cinco cartas comunitárias são reveladas em etapas: Flop (3), Turn (1) e River (1). Há rodadas de aposta entre cada etapa. No Showdown, a melhor mão de 5 cartas ganha."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Qual é o ranking das mãos no poker?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Da mais forte para a mais fraca: Royal Flush, Straight Flush, Quadra, Full House, Flush, Straight, Trinca, Dois Pares, Par, Carta Alta."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Como as posições na mesa de poker funcionam?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "UTG age primeiro (só mãos premium). MP é intermediária. CO é penúltima antes do dealer. BTN é a melhor posição (age por último pós-flop). SB e BB são apostas obrigatórias. Quanto mais tarde você age, mais informação tem."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Qual é a estratégia básica recomendada no poker?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "O estilo Tight-Aggressive (TAG) é o mais recomendado: jogue poucas mãos mas jogue-as com agressividade. Use pot odds para decidir calls, jogue mais mãos em posição tardia, não blefe demais contra iniciantes e controle o tamanho do pote."
+      }
+    }
+  ]
+}
+</script>
+
 <!-- PWA Manifest -->
 <link rel="manifest" href="/manifest.json"/>
 
@@ -694,6 +777,12 @@ HTML = r"""<!DOCTYPE html>
 <link rel="stylesheet" href="/static/css/main.css"/>
 </head>
 <body>
+<noscript>
+  <div style="padding:2rem;max-width:640px;margin:3rem auto;background:#071a10;color:#d5e7dc;font-family:system-ui,sans-serif;border:1px solid #15381f;border-radius:8px">
+    <h1 style="margin:0 0 .5rem">PokerCalc precisa de JavaScript</h1>
+    <p>Esta calculadora usa simulação Monte Carlo no navegador e requer JavaScript ativado. Habilite-o nas configurações do seu navegador e recarregue a página.</p>
+  </div>
+</noscript>
 <!-- SPLASH SCREEN -->
 <div id="splash">
   <div class="splash-logo">
