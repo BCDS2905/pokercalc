@@ -797,18 +797,23 @@ input.ev-input:focus{border-color:var(--gold);}
 
 /* ═══════════════════════════════════════════════════════
    CARD DE PARCERIA (Hotmart — Algoritmo do Poker 2026)
-   Formato IAB Medium Rectangle responsivo. Aparece via
-   JS após 1º cálculo bem-sucedido (body.pc-has-result).
+   Formato Half-Page-style responsivo (max 340px desktop).
+   Aparece via JS após 1º cálculo (body.pc-has-result).
    ═══════════════════════════════════════════════════════ */
 .pc-affiliate{
   display:none;
   max-width:340px;
   margin:0 auto;
-  padding:18px 20px 16px;
-  background:linear-gradient(160deg, rgba(12,36,22,.92) 0%, rgba(7,20,12,.96) 100%);
-  border:1px solid rgba(212,162,58,.35);
-  border-radius:12px;
-  box-shadow:0 4px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(212,162,58,.08);
+  padding:18px 18px 14px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(212,162,58,.08) 0%, transparent 50%),
+    linear-gradient(160deg, rgba(12,36,22,.95) 0%, rgba(7,20,12,.98) 100%);
+  border:1px solid rgba(212,162,58,.4);
+  border-radius:14px;
+  box-shadow:
+    0 6px 28px rgba(0,0,0,.4),
+    0 0 0 1px rgba(212,162,58,.06),
+    inset 0 1px 0 rgba(212,162,58,.12);
   text-align:left;
   font-family:'Rajdhani',system-ui,sans-serif;
   position:relative;
@@ -816,63 +821,188 @@ input.ev-input:focus{border-color:var(--gold);}
 }
 body.pc-has-result .pc-affiliate{ display:block; animation:pcAffFadeIn .5s ease-out; }
 @keyframes pcAffFadeIn{ from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+/* Capa SVG do ebook flutuante no topo direito */
+.pc-aff-cover{
+  position:absolute;
+  top:14px; right:14px;
+  width:56px; height:70px;
+  filter:drop-shadow(0 4px 12px rgba(0,0,0,.5));
+  pointer-events:none;
+  z-index:1;
+}
+.pc-aff-cover svg{ display:block; }
 .pc-aff-badge{
   display:inline-block;
-  font-size:9px; letter-spacing:.18em; font-weight:700;
+  font-size:9px; letter-spacing:.16em; font-weight:700;
   color:#d4a23a;
-  padding:3px 8px; margin-bottom:10px;
-  background:rgba(212,162,58,.08);
-  border:1px solid rgba(212,162,58,.25);
+  padding:4px 9px; margin-bottom:10px;
+  background:rgba(212,162,58,.1);
+  border:1px solid rgba(212,162,58,.3);
   border-radius:20px;
   font-family:'JetBrains Mono',monospace;
+  position:relative; z-index:2;
 }
 .pc-aff-title{
-  font-size:17px; line-height:1.25; font-weight:700;
-  color:#f5e9c9; margin:0 0 10px;
-  letter-spacing:.005em;
+  font-size:20px; line-height:1.15; font-weight:700;
+  color:#f5e9c9; margin:0 0 4px;
+  letter-spacing:0;
+  max-width:215px;       /* deixa espaço pra capa SVG */
+  position:relative; z-index:2;
+}
+.pc-aff-subtitle{
+  font-size:11px; line-height:1.4; font-weight:500;
+  color:rgba(212,162,58,.85);
+  margin:0 0 12px;
+  letter-spacing:.02em;
+  max-width:215px;
+  position:relative; z-index:2;
 }
 .pc-aff-desc{
   font-size:13px; line-height:1.5;
-  color:rgba(255,255,255,.65);
+  color:rgba(255,255,255,.7);
+  margin:0 0 12px;
+}
+.pc-aff-desc em{ color:#e8c96d; font-style:normal; font-weight:600; }
+/* Bullets de benefícios */
+.pc-aff-benefits{
+  list-style:none;
+  padding:0; margin:0 0 14px;
+}
+.pc-aff-benefits li{
+  display:flex;
+  align-items:flex-start;
+  gap:7px;
+  font-size:12.5px; line-height:1.45;
+  color:rgba(255,255,255,.78);
+  padding:3px 0;
+}
+.pc-aff-check{
+  display:inline-flex;
+  align-items:center; justify-content:center;
+  flex-shrink:0;
+  width:16px; height:16px; margin-top:1px;
+  font-size:10px; font-weight:700;
+  color:#0c2416;
+  background:#d4a23a;
+  border-radius:50%;
+}
+/* Caixa de preço */
+.pc-aff-price-box{
+  display:flex;
+  flex-direction:column;
+  align-items:center; gap:2px;
+  padding:12px 10px;
   margin:0 0 14px;
+  background:rgba(212,162,58,.06);
+  border:1px dashed rgba(212,162,58,.3);
+  border-radius:10px;
+  text-align:center;
 }
-.pc-aff-desc strong{ color:#f5e9c9; font-weight:600; }
-.pc-aff-tags{
-  display:block; margin-top:6px;
+.pc-aff-price-installments{
+  font-size:11px; color:rgba(255,255,255,.55);
+  font-family:'Rajdhani',sans-serif;
+  letter-spacing:.02em;
+}
+.pc-aff-price-installments strong{
+  color:#f5e9c9; font-weight:700;
   font-family:'JetBrains Mono',monospace;
-  font-size:10px; letter-spacing:.08em;
-  color:rgba(212,162,58,.7);
 }
-.pc-aff-cta{
+.pc-aff-price-cash{
+  font-size:14px; color:rgba(255,255,255,.7);
+  font-family:'Rajdhani',sans-serif;
+  letter-spacing:.02em;
+  margin-top:1px;
+}
+.pc-aff-price-cash strong{
+  color:#d4a23a; font-weight:800;
+  font-family:'JetBrains Mono',monospace;
+  font-size:22px;
+  margin:0 1px;
+}
+.pc-aff-price-access{
+  font-size:10px;
+  color:rgba(255,255,255,.45);
+  margin-top:6px;
+  letter-spacing:.04em;
+}
+/* Easter egg: 7-2 offsuit (a pior mão do poker) */
+.pc-aff-price-easteregg{
   display:block;
+  margin-top:8px;
+  padding-top:8px;
+  border-top:1px dashed rgba(212,162,58,.18);
+  font-size:10px; line-height:1.45;
+  color:rgba(212,162,58,.7);
+  letter-spacing:.01em;
+  font-family:'Rajdhani',system-ui,sans-serif;
+  cursor:help;
+}
+.pc-aff-price-easteregg em{
+  font-style:normal;
+  font-weight:700;
+  color:#e8c96d;
+  font-family:'JetBrains Mono',monospace;
+}
+/* CTA grande */
+.pc-aff-cta{
+  display:flex;
+  align-items:center; justify-content:center;
+  gap:6px;
   width:100%;
-  padding:11px 18px;
-  background:linear-gradient(180deg,#d4a23a 0%,#b48628 100%);
+  padding:13px 18px;
+  background:linear-gradient(180deg,#e8b94a 0%,#d4a23a 50%,#b48628 100%);
   color:#0c2416 !important;
   font-family:'Rajdhani',sans-serif;
-  font-weight:700; font-size:14px;
-  letter-spacing:.08em; text-transform:uppercase;
+  font-weight:700; font-size:15px;
+  letter-spacing:.06em; text-transform:uppercase;
   text-align:center; text-decoration:none;
-  border:none; border-radius:8px;
-  box-shadow:0 2px 10px rgba(212,162,58,.25);
+  border:none; border-radius:9px;
+  box-shadow:
+    0 4px 14px rgba(212,162,58,.35),
+    inset 0 1px 0 rgba(255,255,255,.25);
   transition:transform .15s ease, box-shadow .15s ease, filter .15s ease;
   cursor:pointer;
 }
 .pc-aff-cta:hover,.pc-aff-cta:focus-visible{
   transform:translateY(-1px);
-  box-shadow:0 4px 16px rgba(212,162,58,.4);
+  box-shadow:0 6px 20px rgba(212,162,58,.5), inset 0 1px 0 rgba(255,255,255,.35);
   filter:brightness(1.08);
   outline:none;
 }
+.pc-aff-cta-arrow{
+  font-size:18px;
+  font-weight:400;
+  transition:transform .15s ease;
+}
+.pc-aff-cta:hover .pc-aff-cta-arrow{ transform:translateX(3px); }
+/* Selos de confiança */
+.pc-aff-trust{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:6px;
+  margin-top:10px;
+  padding-top:10px;
+  border-top:1px solid rgba(212,162,58,.12);
+}
+.pc-aff-trust-item{
+  font-size:10px;
+  color:rgba(255,255,255,.55);
+  letter-spacing:.02em;
+  font-family:system-ui,sans-serif;
+}
+/* Disclosure */
 .pc-aff-disc{
   display:block;
-  margin-top:10px;
-  font-size:10px; line-height:1.4;
-  color:rgba(255,255,255,.32);
-  letter-spacing:.02em;
+  margin-top:8px;
+  font-size:9.5px; line-height:1.45;
+  color:rgba(255,255,255,.3);
+  letter-spacing:.01em;
   font-family:system-ui,sans-serif;
   text-align:center;
 }
+
 /* Hint textual dentro do modo EV */
 .pc-aff-hint{
   margin:14px 0 4px;
@@ -893,9 +1023,16 @@ body.pc-has-result .pc-affiliate{ display:block; animation:pcAffFadeIn .5s ease-
 .pc-aff-hint a:hover,.pc-aff-hint a:focus-visible{
   color:#e8c96d; text-decoration:underline;
 }
-/* Mobile: full-width */
+/* Mobile: full-width, capa SVG menor, layout otimizado */
 @media (max-width:860px){
-  .pc-affiliate{ max-width:100%; margin:12px 0; padding:16px 16px 14px; }
-  .pc-aff-title{ font-size:16px; }
+  .pc-affiliate{ max-width:100%; margin:12px 0; padding:16px 14px 12px; }
+  .pc-aff-cover{ width:42px; height:54px; top:12px; right:12px; }
+  .pc-aff-cover svg{ width:42px; height:54px; }
+  .pc-aff-title{ font-size:18px; max-width:200px; }
+  .pc-aff-subtitle{ max-width:200px; }
+  .pc-aff-benefits li{ font-size:12px; }
+  .pc-aff-price-cash strong{ font-size:20px; }
+  .pc-aff-cta{ font-size:14px; padding:12px 16px; }
+  .pc-aff-trust{ font-size:9.5px; }
   .pc-aff-hint{ margin:12px 0 2px; font-size:11px; padding:8px 12px; }
 }

@@ -968,20 +968,56 @@ HTML = r"""<!DOCTYPE html>
     </div>
 
     <!-- ═══ CARD DE PARCERIA (aparece após 1º cálculo) ═══ -->
-    <aside id="pc-affiliate-card" class="pc-affiliate" aria-label="Parceria comercial" hidden>
-      <div class="pc-aff-badge">📕 GUIA OFICIAL · PARCERIA</div>
-      <h3 class="pc-aff-title">Você calculou a equity.<br/>Agora aprenda a lucrar com ela.</h3>
-      <p class="pc-aff-desc">
-        <strong>O Algoritmo do Poker (2026)</strong> — o manual que explica cada conceito que você calcula aqui.
-        <span class="pc-aff-tags">EV · GTO · ICM · Kelly · 50+ exemplos</span>
-      </p>
+    <aside id="pc-affiliate-card" class="pc-affiliate" aria-label="Parceria comercial — Ebook O Algoritmo do Poker" hidden>
+      <!-- Capa estilizada do ebook (SVG inline) -->
+      <div class="pc-aff-cover" aria-hidden="true">
+        <svg viewBox="0 0 64 80" width="56" height="70" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="4" y="2" width="56" height="76" rx="3" fill="#0c2416" stroke="#d4a23a" stroke-width="1.5"/>
+          <rect x="4" y="2" width="56" height="76" rx="3" fill="url(#pcCoverGrad)"/>
+          <defs><linearGradient id="pcCoverGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#163d27"/><stop offset="1" stop-color="#071a10"/></linearGradient></defs>
+          <text x="32" y="22" text-anchor="middle" fill="#d4a23a" font-family="JetBrains Mono,monospace" font-size="6" font-weight="700" letter-spacing=".5">EBOOK</text>
+          <text x="32" y="42" text-anchor="middle" fill="#f5e9c9" font-family="Rajdhani,sans-serif" font-size="9" font-weight="700">ALGORITMO</text>
+          <text x="32" y="52" text-anchor="middle" fill="#f5e9c9" font-family="Rajdhani,sans-serif" font-size="9" font-weight="700">DO POKER</text>
+          <line x1="14" y1="58" x2="50" y2="58" stroke="#d4a23a" stroke-width=".8"/>
+          <text x="32" y="68" text-anchor="middle" fill="#d4a23a" font-family="JetBrains Mono,monospace" font-size="5" letter-spacing=".3">EDIÇÃO 2026</text>
+        </svg>
+      </div>
+
+      <div class="pc-aff-badge">📕 EBOOK · EDIÇÃO 2026</div>
+      <h3 class="pc-aff-title">O Algoritmo do Poker</h3>
+      <p class="pc-aff-subtitle">Guia completo de matemática aplicada ao Texas Hold'em</p>
+
+      <p class="pc-aff-desc">Pare de jogar por <em>feeling</em>. Domine a matemática que separa amadores dos profissionais.</p>
+
+      <ul class="pc-aff-benefits">
+        <li><span class="pc-aff-check">✓</span> EV, GTO, ICM e Critério de Kelly explicados</li>
+        <li><span class="pc-aff-check">✓</span> Mais de 50 exemplos práticos passo a passo</li>
+        <li><span class="pc-aff-check">✓</span> Foco no mercado brasileiro (PPPoker, BSOP)</li>
+        <li><span class="pc-aff-check">✓</span> Integrado às ferramentas do PokerCalc</li>
+      </ul>
+
+      <div class="pc-aff-price-box">
+        <span class="pc-aff-price-installments">12x de <strong>R$ 6,00</strong> sem juros</span>
+        <span class="pc-aff-price-cash">ou <strong>R$ 72,00</strong> à vista</span>
+        <span class="pc-aff-price-access">⚡ Acesso imediato após o pagamento</span>
+        <span class="pc-aff-price-easteregg" title="7-2 offsuit é considerada a pior mão inicial do Texas Hold'em">
+          🃏 <em>R$ 72</em> = 7-2 offsuit · a pior mão do poker. Coincidência? Não.
+        </span>
+      </div>
+
       <a class="pc-aff-cta"
          href="https://go.hotmart.com/Y105182397D?src=pokercalc&amp;utm_source=pokercalc&amp;utm_medium=result_card&amp;utm_campaign=algoritmo_poker_2026"
          target="_blank" rel="sponsored noopener noreferrer"
          onclick="trackAffClick('result_card')">
-        Conhecer o guia →
+        Quero o ebook agora <span class="pc-aff-cta-arrow">→</span>
       </a>
-      <small class="pc-aff-disc">Parceria comercial — ao comprar, recebemos comissão.</small>
+
+      <div class="pc-aff-trust">
+        <span class="pc-aff-trust-item">🔒 Pagamento seguro Hotmart</span>
+        <span class="pc-aff-trust-item">↺ Garantia de 7 dias</span>
+      </div>
+
+      <small class="pc-aff-disc">Parceria comercial — ao comprar pelo nosso link, recebemos comissão sem custo extra para você.</small>
     </aside>
     <!-- ═══ /CARD DE PARCERIA ═══ -->
 
