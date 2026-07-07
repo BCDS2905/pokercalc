@@ -52,8 +52,10 @@ import gzip, io
 _ALLOWED_ORIGINS = {
     'https://pokercalc.com.br',
     'https://www.pokercalc.com.br',
+    'http://localhost:5000',
     'http://localhost:8080',
     'http://localhost:8086',
+    'http://127.0.0.1:5000',
     'http://127.0.0.1:8080',
     'http://127.0.0.1:8086',
 }
@@ -126,8 +128,10 @@ def set_security_headers(response):
         # healthcheck: sem cache
         response.headers['Cache-Control'] = 'no-store'
     elif request.method == 'GET' and path == '/':
-        # HTML principal: revalidar sempre (conteúdo pode mudar com deploy)
-        response.headers['Cache-Control'] = 'public, max-age=300, must-revalidate'
+        # HTML principal: SEMPRE revalidar no servidor (no-cache ≠ no-store:
+        # o browser guarda, mas confere antes de usar). Essencial porque os
+        # assets são versionados via ?v=hash no HTML — HTML velho = CSS velho.
+        response.headers['Cache-Control'] = 'no-cache'
     elif request.method in ('POST',):
         # APIs de cálculo: sem cache
         response.headers['Cache-Control'] = 'no-store'
@@ -1501,6 +1505,37 @@ def _patch_minified_assets():
     print(f'  🚀  Produção: {swapped} referências de asset trocadas para .min')
 
 _patch_minified_assets()
+
+# ── Cache busting: acrescenta ?v=<hash do conteúdo> a cada asset ──
+# Sem isso, o Cache-Control immutable de 1 ano + Service Worker Cache-First
+# deixariam usuários presos com CSS/JS antigos após cada deploy.
+def _patch_asset_versions():
+    global HTML, _ERROR_PAGE
+    import hashlib
+    assets = [
+        '/static/js/main.js',      '/static/js/main.min.js',
+        '/static/js/pwa.js',       '/static/js/pwa.min.js',
+        '/static/css/main.css',    '/static/css/main.min.css',
+        '/static/css/pages.css',   '/static/css/pages.min.css',
+        '/static/css/fonts.css',   '/static/css/fonts.min.css',
+    ]
+    patched = 0
+    for a in assets:
+        p = os.path.join(_APP_DIR, a.lstrip('/'))
+        if not os.path.exists(p):
+            continue
+        with open(p, 'rb') as f:
+            v = hashlib.md5(f.read()).hexdigest()[:8]
+        needle = f'"{a}"'
+        repl   = f'"{a}?v={v}"'
+        if needle in HTML:
+            HTML = HTML.replace(needle, repl)
+            patched += 1
+        if needle in _ERROR_PAGE:
+            _ERROR_PAGE = _ERROR_PAGE.replace(needle, repl)
+    print(f'  🔄  Cache busting: {patched} assets versionados (?v=hash)')
+
+_patch_asset_versions()
 
 # ── Google Analytics ────────────────────────────────────────────────────────
 import re as _re

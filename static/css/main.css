@@ -574,7 +574,10 @@ input.ev-input:focus{border-color:var(--gold);}
     flex-direction:column;
     overflow:hidden;
   }
-  /* Quando JS mostra o modo com display:block, força flex */
+  /* Modo ativo DEVE ser flex no desktop (o .mode-panel.active global usa
+     display:block!important, que quebrava o layout de altura fixa com
+     scroll interno — o botão CALCULAR sumia em janelas baixas) */
+  #mode-calc.active,#mode-compare.active,#mode-ev.active,
   #mode-calc[style*="block"],#mode-compare[style*="block"],#mode-ev[style*="block"]{
     display:flex!important;
   }
@@ -592,7 +595,21 @@ input.ev-input:focus{border-color:var(--gold);}
   #mode-ev .left-col{
     overflow-y:auto;
     scrollbar-width:thin;
-    scrollbar-color:rgba(201,168,76,.2) transparent;
+    scrollbar-color:rgba(201,168,76,.45) transparent;
+  }
+  /* Painel de controles (oponentes + CALCULAR ODDS) preso ao rodapé da
+     coluna esquerda: o botão fica SEMPRE visível mesmo em janelas baixas —
+     o restante da coluna rola por baixo dele */
+  #mode-calc .left-col > .glass:nth-child(3){
+    position:sticky;
+    bottom:0;
+    z-index:5;
+    background:rgba(9,24,15,.97);
+    backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);
+    box-shadow:0 -10px 26px rgba(0,0,0,.5);
+    border-color:rgba(201,168,76,.28);
+    margin-top:auto;
   }
   /* Colunas direitas */
   #mode-calc .flex-1.flex.flex-col.gap-2,
@@ -602,6 +619,14 @@ input.ev-input:focus{border-color:var(--gold);}
     scrollbar-width:thin;
     scrollbar-color:rgba(201,168,76,.2) transparent;
   }
+}
+/* ── Telas baixas (laptops, janela não maximizada): compacta a coluna
+      esquerda para que mão + board + deck + botão caibam sem corte ── */
+@media(min-width:601px) and (max-height:840px){
+  #deck-grid{max-height:118px!important;}
+  #mode-calc .left-col > .glass{padding:12px!important;}
+  #mode-calc .left-col{gap:6px!important;}
+  #calc-btn{padding:13px 24px!important;font-size:16px!important;}
 }
 /* ── Splash Screen ── */
 #splash{
